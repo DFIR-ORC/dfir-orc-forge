@@ -1,0 +1,30 @@
+//
+// Prefer including 'version.h'
+//
+// This template will be fill by cmake.
+// It must not be included directly except from resource files as it would
+// trigger useless compilations.
+//
+
+#pragma once
+
+#ifndef DOF_VERSION
+#    define DOF_VERSION @DOF_VERSION_MAJOR@, @DOF_VERSION_MINOR@, @DOF_VERSION_PATCH@, @DOF_VERSION_DISTANCE@
+#endif
+#ifndef DOF_VERSION_STRING
+#    define DOF_VERSION_STRING "@DOF_VERSION@"
+#endif
+#ifndef DOF_VERSION_STRINGW
+#    define DOF_VERSION_STRINGW L"@DOF_VERSION@"
+#endif
+
+#define DOF_FILEVER DOF_VERSION
+#define DOF_PRODUCTVER DOF_VERSION
+#define DOF_FILEVER_STRING DOF_VERSION_STRING
+#define DOF_PRODUCTVER_STRING DOF_VERSION_STRING
+#define DOF_FILEVER_STRINGW DOF_VERSION_STRINGW
+#define DOF_PRODUCTVER_STRINGW DOF_VERSION_STRINGW
+
+#define DOF_PRODUCTNAME_STRINGW L"DFIR-ORC FORGE"
+#define DOF_COMPANYNAME_STRINGW L"ANSSI"
+#define DOF_COPYRIGHT_STRINGW L"Copyright 2025-2026 ANSSI. All Rights Reserved."

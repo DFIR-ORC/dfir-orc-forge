@@ -1,0 +1,16 @@
+{
+    "name": "qtbase",
+    "version": "6.8.3",
+    "description": "Qt Base module for DFIR-Orc Forge",
+    "homepage": "https://www.qt.io",
+    "dependencies": [
+      {
+        "name": "vcpkg-cmake",
+        "host": true
+      },
+      {
+        "name": "vcpkg-cmake-config",
+        "host": true
+      }
+    ]
+  }

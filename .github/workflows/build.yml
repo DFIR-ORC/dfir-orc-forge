@@ -1,0 +1,94 @@
+#
+# BEWARE: Do not use unofficial github actions as the version tag could be
+# changed to a malicious commit. If necessary prefer to fork the action.
+#
+name: dfir-orc-forge static build
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*.[0-9]*.[0-9]*'
+    branches: ["*-ci", "**/*-ci"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  QT_BUILD_DIR: build-static/qtbase-install-release-static-mt
+  ARTIFACT_DIR: build-static/MinSizeRel
+  # VCPKG_FEATURE_FLAGS: binarycaching
+  # VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/vcpkg-cache,readwrite"
+
+jobs:
+  build:
+    runs-on: windows-2025
+
+    permissions:
+      contents: write
+
+    steps:
+    - uses: DFIR-ORC/actions-checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        submodules: true
+
+    - name: Set version
+      id: version
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        else
+          echo "version=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+
+    - name: Configure
+      run: |
+        echo "C:\Program Files\Ninja">>%GITHUB_PATH%
+        set "PATH=%PATH%;C:\Program Files\Ninja"
+        call "%GITHUB_WORKSPACE%\.github\vcvars64.cmd" || exit /b 1
+        cmake --preset forge-static -DBUILD_QT_BASE=ON -DDFIRORC_REPO="v10.3.4"
+      shell: cmd
+
+    - name: Build
+      run: |
+        call "%GITHUB_WORKSPACE%\.github\vcvars64.cmd" || exit /b 1
+        cmake --build --preset=forge-static-MinSizeRel --target dfir-orc-forge
+      shell: cmd
+
+    - name: Upload artifact
+      uses: DFIR-ORC/actions-upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+      with:
+        name: dfir-orc-forge_${{ steps.version.outputs.version }}
+        path: |
+          ${{ env.ARTIFACT_DIR }}/dfir-orc-forge.exe
+          ${{ env.ARTIFACT_DIR }}/dfir-orc-forge.pdb
+        retention-days: 1
+
+    - name: Publish to GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        $tag = "${{ github.ref_name }}"
+        $isPrerelease = $tag -match '-(alpha|beta|rc)\d*$'
+
+    - name: Upload release
+      uses: DFIR-ORC-private/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ env.ARTIFACT_DIR }}/dfir-orc-forge.exe
+        asset_name: dfir-orc-forge-${{ steps.version.outputs.version }}-windows-amd64.exe
+        asset_content_type: application/octet-stream
+
+    - name: Upload PDB
+      uses: DFIR-ORC-private/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ env.ARTIFACT_DIR }}/dfir-orc-forge.pdb
+        asset_name: dfir-orc-forge-${{ steps.version.outputs.version }}-windows-amd64.pdb
+        asset_content_type: application/octet-stream

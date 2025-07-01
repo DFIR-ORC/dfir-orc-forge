@@ -1,0 +1,7 @@
+CMakeUserPresets.json
+build*/
+out/
+.vs/
+.claude/
+.github/copilot-instructions.md
+docs/

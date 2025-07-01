@@ -1,0 +1,77 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "forge",
+      "inherits": "Qt",
+      "toolchainFile": "${sourceDir}/external/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "ENABLE_STATIC_RUNTIME": false,
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
+        "VCPKG_ROOT": "${sourceDir}/external/vcpkg"
+      },
+      "environment": {
+        "VCPKG_FEATURE_FLAGS": "manifests,versions"
+      }
+    },
+    {
+      "name": "forge-static",
+      "binaryDir": "${sourceDir}/build-static",
+      "toolchainFile": "${sourceDir}/external/vcpkg/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+        "VCPKG_ROOT": "${sourceDir}/external/vcpkg",
+        "BUILD_QT_BASE": true,
+        "ENABLE_STATIC_RUNTIME": true,
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      },
+      "environment": {
+        "VCPKG_FEATURE_FLAGS": "manifests,versions"
+      }
+    },
+    {
+      "hidden": true,
+      "name": "Qt",
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "$env{QTDIR}"
+      },
+      "vendor": {
+        "qt-project.org/Qt": {
+          "checksum": "wVa86FgEkvdCTVp1/nxvrkaemJc="
+        }
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "forge-Debug",
+      "configurePreset": "forge",
+      "configuration": "Debug",
+      "targets": [
+        "dfir-orc-forge"
+      ]
+    },
+    {
+      "name": "forge-MinSizeRel",
+      "configurePreset": "forge",
+      "configuration": "MinSizeRel",
+      "targets": [
+        "dfir-orc-forge"
+      ]
+    },
+    {
+      "name": "forge-static-MinSizeRel",
+      "configurePreset": "forge-static",
+      "configuration": "MinSizeRel",
+      "targets": [
+        "dfir-orc-forge"
+      ]
+    }
+  ],
+  "vendor": {
+    "qt-project.org/Presets": {
+      "checksum": "4dod2cQrisaDfF17oKOOPqG34Z8="
+    }
+  }
+}

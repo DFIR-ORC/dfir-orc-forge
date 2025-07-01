@@ -1,0 +1,661 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ui="https://github.com/DFIR-ORC/dfir-orc/ui" elementFormDefault="qualified">
+
+    <xs:simpleType name="YesNoType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="yes" />
+            <xs:enumeration value="no" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="TrueFalseType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="true" />
+            <xs:enumeration value="false" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="EnabledDisabledType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="enabled" />
+            <xs:enumeration value="disabled" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="ByteQuantityType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]+(k|m|g)?b?" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="ByteQuantityComparisonType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(gt|lt|ge|le)?[0-9]+(k|m|g)?b?" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="TimeType">
+        <xs:restriction base="xs:string">
+          <xs:pattern value="[0-3][0-9]/[01][0-9]/[12][09][0-9][0-9] [0-2][0-9]:[0-5][0-9]"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+    <xs:simpleType name="Md5Type">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9a-f]{32}" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Sha1Type">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9a-f]{40}" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Sha256Type">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9a-f]{64}" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="AbsolutePathWithoutDriveType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(\\|\/).*" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="AbsolutePathType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[a-z]:(\\|\/).*" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- TODO -->
+    <xs:simpleType name="PathType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value=".*" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="HexStringType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(0x)?([0-9a-f][0-9a-f])+" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="ResurrectType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="yes" />
+            <xs:enumeration value="no" />
+            <xs:enumeration value="resident" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="EmptyType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="SampleContentType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(data|raw|strings(\:min=\d+,max=\d+)?)" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Filesystem element -->
+    <xs:complexType name="FilesystemType">
+        <xs:sequence>
+            <xs:element name="location" type="LocationType" minOccurs="1" maxOccurs="unbounded" />
+            <xs:element name="knownlocations" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="ntfs_find" type="NtfsFindType" />
+                <xs:element name="ntfs_exclude" type="NtfsExcludeType" />
+                <xs:element name="yara" type="YaraType" minOccurs="0" maxOccurs="unbounded" />
+            </xs:choice>
+        </xs:sequence>
+        <xs:attribute name="resurrect" type="ResurrectType" use="optional" default="no" />
+    </xs:complexType>
+
+    <!-- Filesystem element -->
+    <xs:simpleType name="ShadowsType">
+        <xs:restriction base="xs:string">
+            <xs:pattern
+                value="(yes|no|((newest|mid|oldest|{[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}}),?)+)" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="AltitudeType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="exact" />
+            <xs:enumeration value="highest" />
+            <xs:enumeration value="lowest" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Location element -->
+    <xs:complexType name="LocationType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="shadows" type="ShadowsType" use="optional" />
+                <xs:attribute name="altitude" type="AltitudeType" use="optional" />
+                <xs:attribute name="exclude" type="xs:string" use="optional" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <!-- Yara element -->
+    <xs:complexType name="YaraType">
+        <xs:attribute name="source" type="xs:string" use="required" />
+        <xs:attribute name="timeout" type="xs:integer" use="required" />
+        <xs:attribute name="block" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="overlap" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="scan_method" type="xs:string" use="optional" />
+    </xs:complexType>
+
+    <xs:attributeGroup name="NtfsAttributeGroup">
+        <xs:attribute name="name" type="xs:string" use="optional" />
+        <xs:attribute name="name_match" type="xs:string" use="optional" />
+        <xs:attribute name="name_regex" type="xs:string" use="optional" />
+        <xs:attribute name="path" type="AbsolutePathWithoutDriveType" use="optional" />
+        <xs:attribute name="path_match" type="xs:string" use="optional" />
+        <xs:attribute name="path_regex" type="xs:string" use="optional" />
+        <xs:attribute name="size" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="size_gt" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="size_ge" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="size_lt" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="size_le" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="ads" type="xs:string" use="optional" />
+        <xs:attribute name="ads_match" type="xs:string" use="optional" />
+        <xs:attribute name="ads_regex" type="xs:string" use="optional" />
+        <xs:attribute name="md5" type="Md5Type" use="optional" />
+        <xs:attribute name="sha1" type="Sha1Type" use="optional" />
+        <xs:attribute name="sha256" type="Sha256Type" use="optional" />
+        <xs:attribute name="header" use="optional">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:minLength value="1" />
+                    <xs:maxLength value="128" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="header_hex">
+            <xs:simpleType>
+                <xs:restriction base="HexStringType">
+                    <xs:maxLength value="256" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="header_regex" type="xs:string" use="optional" />
+        <xs:attribute name="header_length" type="xs:integer" use="optional" />
+        <xs:attribute name="contains" type="xs:string" use="optional" />
+        <xs:attribute name="contains_hex" type="HexStringType" use="optional" />
+        <xs:attribute name="yara_rule" type="xs:string" use="optional" />
+        <xs:attribute name="attr_name" type="xs:string" use="optional" />
+        <xs:attribute name="attr_match" type="xs:string" use="optional" />
+        <xs:attribute name="attr_regex" type="xs:string" use="optional" />
+        <xs:attribute name="attr_type" type="xs:string" use="optional" />
+    </xs:attributeGroup>
+
+    <!-- NtfsFind element -->
+    <xs:complexType name="NtfsFindType" ui:attributes="list">
+        <!-- <xs:annotation>
+            <xs:appinfo>
+                <ui attributes="list"/>
+            </xs:appinfo>
+        </xs:annotation> -->
+        <xs:attributeGroup ref="NtfsAttributeGroup" />
+        <xs:attribute name="ea" type="xs:string" use="optional" />
+        <xs:attribute name="ea_match" type="xs:string" use="optional" />
+        <xs:attribute name="ea_regex" type="xs:string" use="optional" />
+    </xs:complexType>
+
+    <!-- NtfsExclude element -->
+    <xs:complexType name="NtfsExcludeType" ui:attributes="list">
+        <xs:attributeGroup ref="NtfsAttributeGroup" />
+    </xs:complexType>
+
+    <!-- Registry element -->
+    <xs:complexType name="RegistryType">
+        <xs:sequence>
+            <xs:element name="location" type="LocationType" minOccurs="1" maxOccurs="unbounded" />
+            <xs:element name="knownlocations" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="hive" type="HiveType" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="HiveTemplateType">
+        <xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="location" type="xs:string" use="required" />
+    </xs:complexType>
+
+    <!-- Hive element -->
+    <xs:complexType name="HiveType">
+        <xs:sequence>
+            <xs:element name="reginfo_template" type="HiveTemplateType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="filename" type="AbsolutePathType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="ntfs_find" type="NtfsFindType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="registry_find" type="RegistryFindType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required" />
+    </xs:complexType>
+
+    <xs:simpleType name="RegistryValueType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="reg_none" />
+            <xs:enumeration value="reg_sz" />
+            <xs:enumeration value="reg_expand_sz" />
+            <xs:enumeration value="reg_binary" />
+            <xs:enumeration value="reg_dword" />
+            <xs:enumeration value="reg_dword_little_endian" />
+            <xs:enumeration value="reg_dword_big_endian" />
+            <xs:enumeration value="reg_link" />
+            <xs:enumeration value="reg_multi_sz" />
+            <xs:enumeration value="reg_ressource_list" />
+            <xs:enumeration value="reg_full_ressource_descriptior" />
+            <xs:enumeration value="reg_resource_requirements_list" />
+            <xs:enumeration value="reg_qword" />
+            <xs:enumeration value="reg_qword_little_endian" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- RegistryFind element -->
+    <xs:complexType name="RegistryFindType" ui:attributes="list">
+        <xs:attribute name="key" type="xs:string" use="optional" />
+        <xs:attribute name="key_regex" type="xs:string" use="optional" />
+        <xs:attribute name="key_path" type="AbsolutePathWithoutDriveType" use="optional" />
+        <xs:attribute name="key_path_regex" type="xs:string" use="optional" />
+        <xs:attribute name="value" type="xs:string" use="optional" />
+        <xs:attribute name="value_regex" type="xs:string" use="optional" />
+        <xs:attribute name="value_type" type="RegistryValueType" use="optional" />
+        <xs:attribute name="data" type="xs:string" use="optional" />
+        <xs:attribute name="data_hex" type="HexStringType" use="optional" />
+        <xs:attribute name="data_regex" type="xs:string" use="optional" />
+        <xs:attribute name="data_size" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="data_size_gt" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="data_size_ge" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="data_size_lt" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="data_size_le" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="data_contains" type="xs:string" use="optional" />
+        <xs:attribute name="data_contains_hex" type="HexStringType" use="optional" />
+    </xs:complexType>
+
+    <!-- Object element -->
+    <xs:complexType name="ObjectType">
+        <xs:sequence>
+            <xs:element name="object_find" type="ObjectFindType" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- ObjectFind element -->
+    <xs:complexType name="ObjectFindType" ui:attributes="list">
+        <xs:attribute name="type" type="xs:string" use="required" />
+        <xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="name_match" type="xs:string" use="optional" />
+        <xs:attribute name="name_regex" type="xs:string" use="optional" />
+        <xs:attribute name="path" type="xs:string" use="optional" />
+        <xs:attribute name="path_match" type="xs:string" use="optional" />
+        <xs:attribute name="path_regex" type="xs:string" use="optional" />
+    </xs:complexType>
+
+    <xs:complexType name="LogConsoleType">
+        <xs:attributeGroup ref="LogLevelAttributeGroup" />
+    </xs:complexType>
+
+    <xs:simpleType name="FormatType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="7z" />
+            <xs:enumeration value=".7z" />
+            <xs:enumeration value="zip" />
+            <xs:enumeration value=".zip" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="DispositionType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="truncate" />
+            <xs:enumeration value="append" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="CompressionType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="none" />
+            <xs:enumeration value="fastest" />
+            <xs:enumeration value="fast" />
+            <xs:enumeration value="normal" />
+            <xs:enumeration value="maximum" />
+            <xs:enumeration value="ultra" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="EncodingType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="utf-8" />
+            <xs:enumeration value="utf-16" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="OutputType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="format" type="FormatType" use="optional" />
+                <xs:attribute name="compression" type="CompressionType" use="optional" />
+                <xs:attribute name="encoding" type="EncodingType" use="optional" />
+                <xs:attribute name="disposition" type="DispositionType" use="optional" />
+                <xs:attribute name="password" type="xs:string" use="optional" />
+                <xs:attribute name="connectionstring" type="xs:string" use="optional" />
+                <xs:attribute name="key" type="xs:string" use="optional" />
+                <xs:attribute name="table" type="xs:string" use="optional" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="LogFileType">
+        <xs:sequence>
+            <xs:element name="output" type="OutputType" minOccurs="1" maxOccurs="1" />
+        </xs:sequence>
+        <xs:attributeGroup ref="LogLevelAttributeGroup" />
+    </xs:complexType>
+
+    <xs:simpleType name="NetworkPortType">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="1" />
+            <xs:maxInclusive value="65535" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="LogSyslogType">
+        <xs:sequence>
+            <xs:element name="host" type="OutputType" minOccurs="1" maxOccurs="1" />
+            <xs:element name="port" type="NetworkPortType" minOccurs="0" maxOccurs="1" />
+        </xs:sequence>
+        <xs:attributeGroup ref="LogLevelAttributeGroup" />
+    </xs:complexType>
+
+    <xs:simpleType name="LogLevelType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="trace" />
+            <xs:enumeration value="debug" />
+            <xs:enumeration value="info" />
+            <xs:enumeration value="warning" />
+            <xs:enumeration value="error" />
+            <xs:enumeration value="critical" />
+            <xs:enumeration value="off" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:attributeGroup name="LogLevelAttributeGroup">
+        <xs:attribute name="level" type="LogLevelType" use="optional" />
+        <xs:attribute name="backtrace" type="LogLevelType" use="optional" />
+    </xs:attributeGroup>
+
+    <xs:complexType name="LogType">
+        <xs:sequence>
+            <xs:element name="console" type="LogConsoleType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="file" type="LogFileType" minOccurs="0" maxOccurs="1" />
+        </xs:sequence>
+        <xs:attributeGroup ref="LogLevelAttributeGroup" />
+    </xs:complexType>
+
+    <xs:complexType name="LogWithSyslogType">
+        <xs:sequence>
+            <xs:element name="console" type="LogConsoleType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="file" type="LogFileType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="syslog" type="LogSyslogType" minOccurs="0" maxOccurs="1" />
+        </xs:sequence>
+        <xs:attributeGroup ref="LogLevelAttributeGroup" />
+    </xs:complexType>
+
+    <xs:complexType name="ConsoleType">
+        <xs:sequence>
+            <xs:element name="output" type="OutputType" minOccurs="1" maxOccurs="1" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="PriorityClassType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="low" />
+            <xs:enumeration value="high" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="PowerStateType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="systemrequired" />
+            <xs:enumeration value="displayrequired" />
+            <xs:enumeration value="userpresent" />
+            <xs:enumeration value="awaymode" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="UploadMethodType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="bits" />
+            <xs:enumeration value="filecopy" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="AuthSchemeType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="anonymous" />
+            <xs:enumeration value="basic" />
+            <xs:enumeration value="ntlm" />
+            <xs:enumeration value="kerberos" />
+            <xs:enumeration value="negotiate" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="OperationType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="copy" />
+            <xs:enumeration value="move" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="ModeType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="sync" />
+            <xs:enumeration value="async" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="UrlHostType">
+        <xs:restriction base="xs:anyURI">
+            <xs:pattern value="(https?|file)://[^/]+" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="RecipientType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="name" type="xs:string" use="required"/>
+              <xs:attribute name="archive" type="xs:string" use="required"/>
+            </xs:extension>
+          </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:simpleType name="KeyType">
+        <xs:restriction base="xs:string" />
+    </xs:simpleType>
+
+    <xs:simpleType name="EnableKeyType">
+        <xs:restriction base="xs:string" />
+    </xs:simpleType>
+
+    <xs:simpleType name="DisableKeyType">
+        <xs:restriction base="xs:string" />
+    </xs:simpleType>
+
+    <xs:complexType name="UploadType">
+        <xs:attribute name="job" type="YesNoType" use="optional" />
+        <xs:attribute name="method" type="UploadMethodType" use="required" />
+        <xs:attribute name="server" type="UrlHostType" use="required" />
+        <xs:attribute name="path" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:pattern value="/.*" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="user" type="xs:string" use="optional" />
+        <xs:attribute name="password" type="xs:string" use="optional" />
+        <xs:attribute name="authscheme" type="AuthSchemeType" use="optional" />
+        <xs:attribute name="operation" type="OperationType" use="optional" />
+        <xs:attribute name="mode" type="ModeType" use="optional" />
+        <xs:attribute name="include" type="xs:string" use="optional" />
+        <xs:attribute name="exclude" type="xs:string" use="optional" />
+        <xs:attribute name="delete_smb_share" type="TrueFalseType" use="optional" />
+    </xs:complexType>
+
+    <xs:simpleType name="ArchiveRepeatType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="createnew" />
+            <xs:enumeration value="overwrite" />
+            <xs:enumeration value="once" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="ArchiveRestrictionType">
+        <xs:attribute name="jobmemorylimit" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="processmemorylimit" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="elapsedtimelimit" type="xs:nonNegativeInteger" use="optional" />
+        <xs:attribute name="jobcpulimit" type="xs:nonNegativeInteger" use="optional" />
+        <xs:attribute name="processcpulimit" type="xs:nonNegativeInteger" use="optional" />
+    </xs:complexType>
+
+    <xs:simpleType name="WinVerType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9]+\.[0-9]+[+-]?" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="CommandQueueType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="flush" />
+            <xs:enumeration value="anytime" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="SystemType">
+        <xs:restriction base="xs:string">
+            <xs:pattern
+                value="(workstation|server|domaincontroller)(\|(workstation|server|domaincontroller))*" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="ComputerNameType">
+        <xs:restriction base="xs:string">
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="FileExtensionType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="\.[a-zA-Z0-9]+(,\.[a-zA-Z0-9]+)*" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="CommandExecuteType">
+        <xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="run" type="xs:string" use="optional" />
+        <xs:attribute name="run32" type="xs:string" use="optional" />
+        <xs:attribute name="run64" type="xs:string" use="optional" />
+    </xs:complexType>
+
+    <xs:complexType name="CommandInputType">
+        <xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="source" type="xs:string" use="required" />
+        <xs:attribute name="argument" type="xs:string" use="optional" />
+    </xs:complexType>
+
+    <xs:simpleType name="CommandOutputSourceType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="stdout" />
+            <xs:enumeration value="stderr" />
+            <xs:enumeration value="stdouterr" />
+            <xs:enumeration value="file" />
+            <xs:enumeration value="directory" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="CommandOutputType">
+        <xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="source" type="CommandOutputSourceType" use="required" />
+        <xs:attribute name="argument" type="xs:string" use="optional" />
+        <xs:attribute name="filematch" type="xs:string" use="optional" />
+    </xs:complexType>
+
+    <xs:complexType name="ArchiveCommandType">
+        <xs:sequence>
+            <xs:element name="execute" type="CommandExecuteType" minOccurs="1" />
+            <xs:choice maxOccurs="unbounded">
+                <xs:element name="argument" type="xs:string" />
+                <xs:element name="input" type="CommandInputType" />
+                <xs:element name="output" type="CommandOutputType" />
+            </xs:choice>
+        </xs:sequence>
+        <xs:attribute name="keyword" type="xs:string" use="required" />
+        <xs:attribute name="timeout" type="xs:positiveInteger" use="optional" />
+        <xs:attribute name="winver" type="WinVerType" use="optional" />
+        <xs:attribute name="queue" type="CommandQueueType" use="optional" />
+        <xs:attribute name="systemtype" type="SystemType" use="optional" />
+        <xs:attribute name="diskfree" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="optional" type="YesNoType" use="optional" />
+    </xs:complexType>
+
+    <xs:complexType name="ArchiveType">
+        <xs:sequence>
+            <xs:element name="restrictions" type="ArchiveRestrictionType" minOccurs="0" />
+            <xs:element name="command" type="ArchiveCommandType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="keyword" type="xs:string" use="required" />
+        <xs:attribute name="concurrency" type="xs:positiveInteger" use="required" />
+        <xs:attribute name="optional" type="YesNoType" use="optional" />
+        <xs:attribute name="repeat" type="ArchiveRepeatType" use="required" />
+        <xs:attribute name="compression" type="CompressionType" use="optional" />
+        <xs:attribute name="command_timeout" type="xs:nonNegativeInteger" use="optional" />
+        <xs:attribute name="archive_timeout" type="xs:nonNegativeInteger" use="optional" />
+        <xs:attribute name="physicalmemory" type="ByteQuantityComparisonType" use="optional" />
+        <xs:attribute name="diskfree" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="childdebug" type="YesNoType" use="optional" />
+    </xs:complexType>
+
+    <xs:attributeGroup name="MaxLimitsGroupType">
+        <xs:attribute name="maxpersamplebytes" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="maxtotalbytes" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="maxsamplecount" type="xs:nonNegativeInteger" use="optional" />
+    </xs:attributeGroup>
+
+    <xs:complexType name="SampleType">
+        <xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="ntfs_find" type="NtfsFindType" />
+                <xs:element name="ntfs_exclude" type="NtfsExcludeType" />
+            </xs:choice>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" />
+        <xs:attribute name="content" type="SampleContentType" use="optional" />
+        <xs:attributeGroup ref="MaxLimitsGroupType" />
+    </xs:complexType>
+
+    <xs:simpleType name="SampleNameFormatType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(default|qualifierthenfrn)" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="GetThisSamplesType">
+        <xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="ntfs_find" type="NtfsFindType" />
+                <xs:element name="ntfs_exclude" type="NtfsExcludeType" />
+                <xs:element name="yara" type="YaraType" minOccurs="0" maxOccurs="unbounded" />
+            </xs:choice>
+            <xs:element name="sample" type="SampleType" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:attributeGroup ref="MaxLimitsGroupType" />
+        <xs:attribute name="content" type="SampleContentType" use="optional" />
+        <xs:attribute name="samplenameformat" type="SampleNameFormatType" use="optional" />
+    </xs:complexType>
+</xs:schema>

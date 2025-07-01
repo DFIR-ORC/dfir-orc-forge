@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+    <xs:include schemaLocation="common.xsd" />
+
+    <xs:simpleType name="FatInfoColumnsEnumType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="computername" />
+            <xs:enumeration value="volumeid" />
+            <xs:enumeration value="file" />
+            <xs:enumeration value="parentname" />
+            <xs:enumeration value="fullname" />
+            <xs:enumeration value="extension" />
+            <xs:enumeration value="sizeinbytes" />
+            <xs:enumeration value="attributes" />
+            <xs:enumeration value="creationdate" />
+            <xs:enumeration value="lastmodificationdate" />
+            <xs:enumeration value="lastaccessdate" />
+            <xs:enumeration value="recordinuse" />
+            <xs:enumeration value="shortname" />
+            <xs:enumeration value="md5" />
+            <xs:enumeration value="sha1" />
+            <xs:enumeration value="sha256" />
+            <xs:enumeration value="firstbytes" />
+            <xs:enumeration value="version" />
+            <xs:enumeration value="company" />
+            <xs:enumeration value="product" />
+            <xs:enumeration value="originalname" />
+            <xs:enumeration value="platform" />
+            <xs:enumeration value="timestamp" />
+            <xs:enumeration value="subsystem" />
+            <xs:enumeration value="filetype" />
+            <xs:enumeration value="fileos" />
+            <xs:enumeration value="pemd5" />
+            <xs:enumeration value="pesha1" />
+            <xs:enumeration value="pesha256" />
+            <xs:enumeration value="securitydirectory" />
+            <xs:enumeration value="authenticodestatus" />
+            <xs:enumeration value="authenticodesigner" />
+            <xs:enumeration value="authenticodesignerthumbprint" />
+            <xs:enumeration value="authenticodeca" />
+            <xs:enumeration value="authenticodecathumbprint" />
+            <!-- aliases -->
+            <xs:enumeration value="default" />
+            <xs:enumeration value="deepscan" />
+            <xs:enumeration value="details" />
+            <xs:enumeration value="pehashes" />
+            <xs:enumeration value="dates" />
+            <xs:enumeration value="authenticode" />
+            <xs:enumeration value="all" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- BEWARE: the values appears two time in following pattern -->
+    <xs:simpleType name="FatInfoColumnsItemsType">
+        <xs:restriction base="xs:string">
+            <xs:pattern
+                value="(computername|volumeid|file|parentname|fullname|extension|sizeinbytes|attributes|creationdate|lastmodificationdate|lastaccessdate|recordinuse|shortname|md5|sha1|sha256|firstbytes|version|company|product|originalname|platform|timestamp|subsystem|filetype|fileos|pemd5|pesha1|pesha256|securitydirectory|authenticodestatus|authenticodesigner|authenticodesignerthumbprint|authenticodeca|authenticodecathumbprint|default|deepscan|details|pehashes|dates|authenticode|all)(,(computername|volumeid|file|parentname|fullname|extension|sizeinbytes|attributes|creationdate|lastmodificationdate|lastaccessdate|recordinuse|shortname|md5|sha1|sha256|firstbytes|version|company|product|originalname|platform|timestamp|subsystem|filetype|fileos|pemd5|pesha1|pesha256|securitydirectory|authenticodestatus|authenticodesigner|authenticodesignerthumbprint|authenticodeca|authenticodecathumbprint|default|deepscan|details|pehashes|dates|authenticode|all))*" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="FatInfoColumnsAddOmitType">
+        <xs:simpleContent>
+            <xs:extension base="FatInfoColumnsItemsType">
+                <xs:attribute name="sizelt" type="ByteQuantityType" use="optional" />
+                <xs:attribute name="sizegt" type="ByteQuantityType" use="optional" />
+                <xs:attribute name="hasversioninfo" type="EmptyType" use="optional" />
+                <xs:attribute name="haspe" type="EmptyType" use="optional" />
+                <xs:attribute name="extbinary" type="EmptyType" use="optional" />
+                <xs:attribute name="extarchive" type="EmptyType" use="optional" />
+                <xs:attribute name="ext" type="FileExtensionType" use="optional" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="FatInfoColumnsType">
+        <xs:sequence>
+            <xs:element name="default" type="FatInfoColumnsItemsType" minOccurs="0"
+                maxOccurs="unbounded"/>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="add" type="FatInfoColumnsAddOmitType" minOccurs="0"
+                    maxOccurs="unbounded" />
+                <xs:element name="omit" type="FatInfoColumnsAddOmitType" minOccurs="0"
+                    maxOccurs="unbounded" />
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="fatinfo">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="log" type="LogType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="output" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="location" type="LocationType" minOccurs="0" maxOccurs="unbounded" />
+                <xs:element name="columns" type="FatInfoColumnsType" minOccurs="0" maxOccurs="1" />
+            </xs:sequence>
+            <xs:attribute name="resurrect" type="ResurrectType" use="optional" />
+            <xs:attribute name="computer" type="ComputerNameType" use="optional" />
+            <xs:attribute name="popsysobj" type="EmptyType" use="optional" />
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

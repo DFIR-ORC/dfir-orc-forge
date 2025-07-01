@@ -1,0 +1,16 @@
+<dfir-orc>
+    <output>C:\Windows\Temp</output>
+    <upload
+        method="filecopy"
+        server="file://192.168.0.2"
+        path="/smb/"
+        mode="sync"
+        operation="move"
+    />
+    <recipient name='test' archive='*'>
+-----BEGIN CERTIFICATE-----
+... put a valid certificate here ...
+-----END CERTIFICATE-----
+    </recipient>
+    <enable_key>FastFind</enable_key>
+</dfir-orc>

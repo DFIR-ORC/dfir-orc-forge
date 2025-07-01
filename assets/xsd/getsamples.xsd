@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+    <xs:include schemaLocation="common.xsd" />
+
+    <xs:complexType name="ExtendedCommandExecuteType">
+        <xs:complexContent>
+            <xs:extension base="CommandExecuteType">
+                <xs:attribute name="args" type="xs:string" use="optional" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- Not sure this is still being used/functional -->
+    <xs:complexType name="AutorunsType">
+        <xs:sequence>
+            <xs:choice maxOccurs="unbounded">
+                <xs:element name="location" type="xs:string" minOccurs="0" />
+                <xs:element name="time" type="TimeType" minOccurs="0" />
+                <xs:element name="itemname" type="xs:string" minOccurs="0" />
+                <xs:element name="enabled" type="EnabledDisabledType" minOccurs="0" />
+                <xs:element name="launchstring" type="xs:string" minOccurs="0" />
+                <xs:element name="profile" type="xs:string" minOccurs="0" />
+                <xs:element name="description" type="xs:string" minOccurs="0" />
+                <xs:element name="company" type="xs:string" minOccurs="0" />
+                <xs:element name="version" type="xs:string" minOccurs="0" />
+                <xs:element name="imagepath" type="xs:string" minOccurs="0" />
+                <xs:element name="md5hash" type="Md5Type" minOccurs="0" />
+                <xs:element name="sha1hash" type="Sha1Type" minOccurs="0" />
+                <xs:element name="pesha1hash" type="Sha1Type" minOccurs="0" />
+                <xs:element name="sha256hash" type="Sha256Type" minOccurs="0" />
+                <xs:element name="pesha256hash" type="Sha256Type" minOccurs="0" />
+                <xs:element name="impHash" type="Md5Type" minOccurs="0" />
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="getsamples">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="log" type="LogType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="output" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="sampleinfo" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="timeline" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="tempdir" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="knownlocations" type="xs:string" minOccurs="0" maxOccurs="1" />
+                <xs:element name="getthis" type="ExtendedCommandExecuteType" minOccurs="0" />
+                <xs:element name="getthisconfig" type="xs:string" minOccurs="0" />
+                <xs:element name="getthisargs" type="xs:string" minOccurs="0" />
+                <xs:element name="samples">
+                    <xs:complexType>
+                        <xs:attributeGroup ref="MaxLimitsGroupType" />
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="nolimits" type="EmptyType" use="optional" />
+            <xs:attribute name="nosigcheck" type="EmptyType" use="optional" />
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

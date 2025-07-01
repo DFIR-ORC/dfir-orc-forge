@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+    <xs:include schemaLocation="common.xsd" />
+
+    <xs:simpleType name="WalkerType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="mft" />
+            <xs:enumeration value="usn" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="NtfsInfoColumnsEnumType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ads" />
+            <xs:enumeration value="attributes" />
+            <xs:enumeration value="authenticodeca" />
+            <xs:enumeration value="authenticodecathumbprint" />
+            <xs:enumeration value="authenticodesigner" />
+            <xs:enumeration value="authenticodesignerthumbprint" />
+            <xs:enumeration value="authenticodestatus" />
+            <xs:enumeration value="companyname" />
+            <xs:enumeration value="computername" />
+            <xs:enumeration value="creationdate" />
+            <xs:enumeration value="dataid" />
+            <xs:enumeration value="dataindex" />
+            <xs:enumeration value="easize" />
+            <xs:enumeration value="extendedattribute" />
+            <xs:enumeration value="extension" />
+            <xs:enumeration value="file" />
+            <xs:enumeration value="filenamecreationdate" />
+            <xs:enumeration value="filenameflags" />
+            <xs:enumeration value="filenameid" />
+            <xs:enumeration value="filenameindex" />
+            <xs:enumeration value="filenamelastaccessdate" />
+            <xs:enumeration value="filenamelastattrmodificationdate" />
+            <xs:enumeration value="filenamelastmodificationdate" />
+            <xs:enumeration value="fileos" />
+            <xs:enumeration value="filetype" />
+            <xs:enumeration value="firstbytes" />
+            <xs:enumeration value="frn" />
+            <xs:enumeration value="fullname" />
+            <xs:enumeration value="lastaccessdate" />
+            <xs:enumeration value="lastattrchangedate" />
+            <xs:enumeration value="lastmodificationdate" />
+            <xs:enumeration value="md5" />
+            <xs:enumeration value="originalfilename" />
+            <xs:enumeration value="owner" />
+            <xs:enumeration value="ownerid" />
+            <xs:enumeration value="ownersid" />
+            <xs:enumeration value="parentfrn" />
+            <xs:enumeration value="parentname" />
+            <xs:enumeration value="pemd5" />
+            <xs:enumeration value="pesha1" />
+            <xs:enumeration value="pesha256" />
+            <xs:enumeration value="platform" />
+            <xs:enumeration value="productname" />
+            <xs:enumeration value="recordinuse" />
+            <xs:enumeration value="secdescrid" />
+            <xs:enumeration value="securitydirectory" />
+            <xs:enumeration value="sha1" />
+            <xs:enumeration value="sha256" />
+            <xs:enumeration value="shortname" />
+            <xs:enumeration value="signedhash" />
+            <xs:enumeration value="sizeinbytes" />
+            <xs:enumeration value="snapshotid" />
+            <xs:enumeration value="ssdeep" />
+            <xs:enumeration value="subsystem" />
+            <xs:enumeration value="timestamp" />
+            <xs:enumeration value="tlsh" />
+            <xs:enumeration value="usn" />
+            <xs:enumeration value="version" />
+            <xs:enumeration value="volumeid" />
+            <xs:enumeration value="securitydirectorysize" />
+            <xs:enumeration value="securitydirectorysignaturesize" />
+            <!-- aliases -->
+            <xs:enumeration value="default" />
+            <xs:enumeration value="deepscan" />
+            <xs:enumeration value="details" />
+            <xs:enumeration value="hashes" />
+            <xs:enumeration value="fuzzy" />
+            <xs:enumeration value="pehashes" />
+            <xs:enumeration value="dates" />
+            <xs:enumeration value="refnums" />
+            <xs:enumeration value="authenticode" />
+            <xs:enumeration value="all" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- BEWARE: the values appears two time in following pattern -->
+    <xs:simpleType name="NtfsInfoColumnsItemsType">
+        <xs:restriction base="xs:string">
+            <xs:pattern
+                value="(ads|attributes|authenticodeca|authenticodecathumbprint|authenticodesigner|authenticodesignerthumbprint|authenticodestatus|companyname|computername|creationdate|dataid|dataindex|easize|extendedattribute|extension|file|filenamecreationdate|filenameflags|filenameid|filenameindex|filenamelastaccessdate|filenamelastattrmodificationdate|filenamelastmodificationdate|fileos|filetype|firstbytes|frn|fullname|lastaccessdate|lastattrchangedate|lastmodificationdate|md5|originalfilename|owner|ownerid|ownersid|parentfrn|parentname|pemd5|pesha1|pesha256|platform|productname|recordinuse|secdescrid|securitydirectory|sha1|sha256|shortname|signedhash|sizeinbytes|snapshotid|ssdeep|subsystem|timestamp|tlsh|usn|version|volumeid|securitydirectorysize|securitydirectorysignaturesize|default|deepscan|details|hashes|fuzzy|pehashes|dates|refnums|authenticode|all)(,(ads|attributes|authenticodeca|authenticodecathumbprint|authenticodesigner|authenticodesignerthumbprint|authenticodestatus|companyname|computername|creationdate|dataid|dataindex|easize|extendedattribute|extension|file|filenamecreationdate|filenameflags|filenameid|filenameindex|filenamelastaccessdate|filenamelastattrmodificationdate|filenamelastmodificationdate|fileos|filetype|firstbytes|frn|fullname|lastaccessdate|lastattrchangedate|lastmodificationdate|md5|originalfilename|owner|ownerid|ownersid|parentfrn|parentname|pemd5|pesha1|pesha256|platform|productname|recordinuse|secdescrid|securitydirectory|sha1|sha256|shortname|signedhash|sizeinbytes|snapshotid|ssdeep|subsystem|timestamp|tlsh|usn|version|volumeid|securitydirectorysize|securitydirectorysignaturesize|default|deepscan|details|hashes|fuzzy|pehashes|dates|refnums|authenticode|all))*" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="NtfsInfoColumnsAddOmitType">
+        <xs:simpleContent>
+            <xs:extension base="NtfsInfoColumnsItemsType">
+                <xs:attribute name="sizelt" type="ByteQuantityType" use="optional" />
+                <xs:attribute name="sizegt" type="ByteQuantityType" use="optional" />
+                <xs:attribute name="hasversioninfo" type="EmptyType" use="optional" />
+                <xs:attribute name="haspe" type="EmptyType" use="optional" />
+                <xs:attribute name="extbinary" type="EmptyType" use="optional" />
+                <xs:attribute name="extarchive" type="EmptyType" use="optional" />
+                <xs:attribute name="ext" type="FileExtensionType" use="optional" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="NtfsInfoColumnsType">
+        <xs:sequence>
+            <xs:element name="default" type="NtfsInfoColumnsItemsType" minOccurs="0"
+                maxOccurs="unbounded" />
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="add" type="NtfsInfoColumnsAddOmitType" minOccurs="0"
+                    maxOccurs="unbounded" />
+                <xs:element name="omit" type="NtfsInfoColumnsAddOmitType" minOccurs="0"
+                    maxOccurs="unbounded" />
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="ntfsinfo">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="log" type="LogType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="fileinfo" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="attrinfo" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="i30info" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="timeline" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="secdescr" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="location" type="LocationType" minOccurs="0" maxOccurs="unbounded" />
+                <xs:element name="columns" type="NtfsInfoColumnsType" minOccurs="0" maxOccurs="1" />
+            </xs:sequence>
+            <xs:attribute name="walker" type="WalkerType" use="optional" />
+            <xs:attribute name="resurrect" type="ResurrectType" use="optional" />
+            <xs:attribute name="computer" type="ComputerNameType" use="optional" />
+            <xs:attribute name="popsysobj" type="EmptyType" use="optional" />
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>

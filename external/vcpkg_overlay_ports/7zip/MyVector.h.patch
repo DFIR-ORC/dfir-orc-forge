@@ -1,0 +1,13 @@
+diff --git a/CPP/Common/MyVector.h b/CPP/Common/MyVector.h
+index 3417a17..32372b4 100644
+--- a/CPP/Common/MyVector.h
++++ b/CPP/Common/MyVector.h
+@@ -3,6 +3,8 @@
+ #ifndef __COMMON_MY_VECTOR_H
+ #define __COMMON_MY_VECTOR_H
+ 
++#include "Common.h"
++
+ #include <string.h>
+ 
+ const unsigned k_VectorSizeMax = ((unsigned)1 << 31) - 1;

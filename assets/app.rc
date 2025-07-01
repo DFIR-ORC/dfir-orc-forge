@@ -1,0 +1,67 @@
+#include <windows.h>
+
+#include "versionres.h"
+
+IDI_ICON1 ICON "app.ico"
+
+LOGO RCDATA "logo/anvil.png"
+
+ISCHEMA_COMMON RCDATA "xsd/common.xsd"
+
+SCHEMA_FASTFIND RCDATA "xsd/fastfind.xsd"
+SCHEMA_FATINFO RCDATA "xsd/fatinfo.xsd"
+SCHEMA_GETTHIS RCDATA "xsd/getthis.xsd"
+SCHEMA_GETSAMPLES RCDATA "xsd/getsamples.xsd"
+SCHEMA_GETSECTORS RCDATA "xsd/getsectors.xsd"
+SCHEMA_LOCAL RCDATA "xsd/local.xsd"
+SCHEMA_NTFSINFO RCDATA "xsd/ntfsinfo.xsd"
+SCHEMA_OBJINFO RCDATA "xsd/objinfo.xsd"
+SCHEMA_REGINFO RCDATA "xsd/reginfo.xsd"
+SCHEMA_USNINFO RCDATA "xsd/usninfo.xsd"
+SCHEMA_WOLF RCDATA "xsd/wolf.xsd"
+
+CONFIGURATION_NEW_FASTFIND RCDATA "configuration/new/fastfind.xml"
+CONFIGURATION_NEW_FATINFO RCDATA "configuration/new/fatinfo.xml"
+CONFIGURATION_NEW_GETSAMPLES RCDATA "configuration/new/getsamples.xml"
+CONFIGURATION_NEW_GETSECTORS RCDATA "configuration/new/getsectors.xml"
+CONFIGURATION_NEW_GETTHIS RCDATA "configuration/new/getthis.xml"
+CONFIGURATION_NEW_LOCAL RCDATA "configuration/new/local.xml"
+CONFIGURATION_NEW_NTFSINFO RCDATA "configuration/new/ntfsinfo.xml"
+CONFIGURATION_NEW_OBJINFO RCDATA "configuration/new/objinfo.xml"
+CONFIGURATION_NEW_REGINFO RCDATA "configuration/new/reginfo.xml"
+CONFIGURATION_NEW_USNINFO RCDATA "configuration/new/usninfo.xml"
+CONFIGURATION_NEW_WOLFLAUNCHER RCDATA "configuration/new/wolf.xml"
+CONFIGURATION_NEW_YARA_RULE RCDATA "configuration/new/rule.yara"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION DOF_VERSION
+ PRODUCTVERSION DOF_VERSION
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+			VALUE "CompanyName", DOF_COMPANYNAME_STRINGW
+			VALUE "FileDescription", "DFIR-ORC configuration editor"
+			VALUE "FileVersion", DOF_FILEVER_STRING
+			VALUE "InternalName", "DFIR-ORC FORGE"
+			VALUE "LegalCopyright", DOF_COPYRIGHT_STRINGW
+			VALUE "OriginalFilename", "DFIR-ORC FORGE"
+			VALUE "ProductName", DOF_PRODUCTNAME_STRINGW
+			VALUE "ProductVersion", DOF_PRODUCTVER_STRING
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
