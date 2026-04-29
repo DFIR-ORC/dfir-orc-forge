@@ -3,14 +3,25 @@
     <xs:include schemaLocation="common.xsd" />
 
     <xs:element name="usninfo">
+        <xs:annotation><xs:documentation>Collect and export NTFS USN (Update Sequence Number) journal entries from specified volumes. The USN journal records file system change events.</xs:documentation></xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="Log" type="LogType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="Output" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="Location" type="LocationType" minOccurs="0" maxOccurs="unbounded" />
-                <xs:element name="KnownLocations" type="xs:string" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Log" type="LogType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Configure log output sinks (console, file) and their log levels.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Output" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Output file for USN journal entries (CSV).</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Location" type="LocationType" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation><xs:documentation>NTFS volume to read the USN journal from.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="KnownLocations" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Include predefined system locations in the search scope.</xs:documentation></xs:annotation>
+                </xs:element>
             </xs:sequence>
-            <xs:attribute name="Compact" type="YesNoType" use="optional" />
+            <xs:attribute name="Compact" type="YesNoType" use="optional">
+                <xs:annotation><xs:documentation>Output compact CSV format (yes) omitting some less commonly used columns, or full format (no, default).</xs:documentation></xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
 

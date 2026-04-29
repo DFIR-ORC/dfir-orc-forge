@@ -16,6 +16,7 @@
 
 class XsdStore;
 class XmlDom;
+class XmlCompleter;
 
 class XmlConfigEditor : public TextEditWidget, public EditorInterface
 {
@@ -51,4 +52,5 @@ private:
     std::unique_ptr<XmlDom> dom_;
     QTimer validationTimer_;
     std::optional<QString> configIdentifier_;
+    XmlCompleter *completer_ = nullptr;
 };

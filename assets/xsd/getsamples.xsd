@@ -35,25 +35,49 @@
     </xs:complexType>
 
     <xs:element name="getsamples">
+        <xs:annotation><xs:documentation>Collect samples from an Authenticode catalog feed or a local sample database. Uses GetThis internally to perform the actual file collection.</xs:documentation></xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="Log" type="LogType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="Output" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="SampleInfo" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="Timeline" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="TempDir" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="KnownLocations" type="xs:string" minOccurs="0" maxOccurs="1" />
-                <xs:element name="GetThis" type="ExtendedCommandExecuteType" minOccurs="0" />
-                <xs:element name="GetThisConfig" type="xs:string" minOccurs="0" />
-                <xs:element name="GetThisArgs" type="xs:string" minOccurs="0" />
+                <xs:element name="Log" type="LogType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Configure log output sinks (console, file) and their log levels.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Output" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Output archive for collected samples.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="SampleInfo" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Output file for sample metadata (CSV).</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Timeline" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Output file for timeline data associated with collected samples.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="TempDir" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Temporary directory used during sample processing.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="KnownLocations" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Include predefined system locations when searching for samples.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="GetThis" type="ExtendedCommandExecuteType" minOccurs="0">
+                    <xs:annotation><xs:documentation>Path to the GetThis executable to use for sample collection.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="GetThisConfig" type="xs:string" minOccurs="0">
+                    <xs:annotation><xs:documentation>Path to an optional GetThis XML configuration file.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="GetThisArgs" type="xs:string" minOccurs="0">
+                    <xs:annotation><xs:documentation>Additional command-line arguments to pass to GetThis.</xs:documentation></xs:annotation>
+                </xs:element>
                 <xs:element name="Samples">
+                    <xs:annotation><xs:documentation>Global collection limits container.</xs:documentation></xs:annotation>
                     <xs:complexType>
                         <xs:attributeGroup ref="MaxLimitsGroupType" />
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>
-            <xs:attribute name="NoLimits" type="EmptyType" use="optional" />
-            <xs:attribute name="NoSigCheck" type="EmptyType" use="optional" />
+            <xs:attribute name="NoLimits" type="EmptyType" use="optional">
+                <xs:annotation><xs:documentation>Disable all collection size and count limits.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="NoSigCheck" type="EmptyType" use="optional">
+                <xs:annotation><xs:documentation>Skip Authenticode signature verification for collected samples.</xs:documentation></xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
 

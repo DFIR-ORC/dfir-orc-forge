@@ -32,19 +32,34 @@
     </xs:simpleType>
 
     <xs:element name="reginfo">
+        <xs:annotation><xs:documentation>Search and export registry data matching specified hive and key/value criteria from the specified locations.</xs:documentation></xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="Log" type="LogType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="Output" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="Location" type="LocationType" minOccurs="0" maxOccurs="unbounded" />
-                <xs:element name="Information" type="RegInfoColumnsItemsType" minOccurs="0"
-                    maxOccurs="1" />
-                <xs:element name="Hive" type="HiveType" minOccurs="0" maxOccurs="unbounded" />
-                <xs:element name="KnownLocations" type="xs:string" minOccurs="0" maxOccurs="1" />
-                <xs:element name="csv_limit" type="xs:nonNegativeInteger" minOccurs="0"
-                    maxOccurs="1" />
+                <xs:element name="Log" type="LogType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Configure log output sinks (console, file) and their log levels.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Output" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Output file for registry search results (CSV).</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Location" type="LocationType" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation><xs:documentation>NTFS volume or path to search for registry hive files.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Information" type="RegInfoColumnsItemsType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Comma-separated list of output columns to include (e.g. keyname,valuename,valuedata).</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Hive" type="HiveType" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation><xs:documentation>Registry hive definition with location and search criteria (registry_find elements).</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="KnownLocations" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Include predefined system locations when searching for hive files.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="csv_limit" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Maximum number of rows to write per output CSV file before starting a new file.</xs:documentation></xs:annotation>
+                </xs:element>
             </xs:sequence>
-            <xs:attribute name="Computer" type="ComputerNameType" use="optional" />
+            <xs:attribute name="Computer" type="ComputerNameType" use="optional">
+                <xs:annotation><xs:documentation>Override the computer name written in the ComputerName column of the output file.</xs:documentation></xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
 

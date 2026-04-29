@@ -122,21 +122,46 @@
     </xs:complexType>
 
     <xs:element name="ntfsinfo">
+        <xs:annotation><xs:documentation>Enumerate NTFS file system metadata and attributes from specified volumes. Outputs file info, attribute info, I30 index info, timeline and security descriptor data.</xs:documentation></xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="log" type="LogType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="fileinfo" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="attrinfo" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="i30info" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="timeline" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="secdescr" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="location" type="LocationType" minOccurs="0" maxOccurs="unbounded" />
-                <xs:element name="columns" type="NtfsInfoColumnsType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="log" type="LogType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Configure log output sinks (console, file) and their log levels.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="fileinfo" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Output file for per-file NTFS metadata (CSV).</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="attrinfo" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Output file for per-NTFS-attribute metadata (CSV).</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="i30info" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Output file for I30 index entry metadata (CSV). Useful for detecting deleted entries still present in directory indexes.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="timeline" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Output file for filesystem timeline data (CSV).</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="secdescr" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Output file for NTFS security descriptor data (CSV).</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="location" type="LocationType" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation><xs:documentation>NTFS volume or path to enumerate. Multiple locations can be specified.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="columns" type="NtfsInfoColumnsType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Customize which output columns to include, add or omit from the default column set.</xs:documentation></xs:annotation>
+                </xs:element>
             </xs:sequence>
-            <xs:attribute name="Walker" type="WalkerType" use="optional" />
-            <xs:attribute name="Resurrect" type="ResurrectType" use="optional" />
-            <xs:attribute name="Computer" type="ComputerNameType" use="optional" />
-            <xs:attribute name="PopSysObj" type="EmptyType" use="optional" />
+            <xs:attribute name="Walker" type="WalkerType" use="optional">
+                <xs:annotation><xs:documentation>MFT walking strategy: mft (parse MFT directly) or usn (use USN journal). Default is mft.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Resurrect" type="ResurrectType" use="optional">
+                <xs:annotation><xs:documentation>Include deleted MFT records: yes (all deleted), no (live only), or resident (deleted with resident attributes only).</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Computer" type="ComputerNameType" use="optional">
+                <xs:annotation><xs:documentation>Override the computer name written in the ComputerName column of all output files.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="PopSysObj" type="EmptyType" use="optional">
+                <xs:annotation><xs:documentation>Include system metafiles (MFT, $LogFile, etc.) in the enumeration output.</xs:documentation></xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
 

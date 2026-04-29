@@ -3,21 +3,46 @@
     <xs:include schemaLocation="common.xsd" />
 
     <xs:element name="getthis">
+        <xs:annotation><xs:documentation>Collect files matching NTFS search criteria from specified locations. Limits must be explicitly set or NoLimits specified.</xs:documentation></xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="Log" type="LogType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="Output" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="Location" type="LocationType" minOccurs="0" maxOccurs="unbounded" />
-                <xs:element name="KnownLocations" type="xs:string" minOccurs="0" maxOccurs="1" />
-                <xs:element name="Yara" type="YaraType" minOccurs="0" />
-                <xs:element name="Samples" type="GetThisSamplesType" />
+                <xs:element name="Log" type="LogType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Configure log output sinks (console, file) and their log levels.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Output" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Output archive or directory for collected sample files and the metadata CSV.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Location" type="LocationType" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation><xs:documentation>NTFS volume or path to search. Multiple locations can be specified.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="KnownLocations" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Include predefined system locations (CSIDL/known-folder paths) in the search scope.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Yara" type="YaraType" minOccurs="0">
+                    <xs:annotation><xs:documentation>YARA rule file(s) for content-based matching. Rules can be referenced by name in ntfs_find yara_rule attributes.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Samples" type="GetThisSamplesType">
+                    <xs:annotation><xs:documentation>Top-level collection container defining global limits and sample groups. At least one limit must be set unless NoLimits is specified.</xs:documentation></xs:annotation>
+                </xs:element>
             </xs:sequence>
-            <xs:attribute name="NoLimits" type="EmptyType" use="optional" />
-            <xs:attribute name="Resurrect" type="ResurrectType" use="optional" />
-            <xs:attribute name="ReportAll" type="EmptyType" use="optional" />
-            <xs:attribute name="FlushRegistry" type="YesNoType" use="optional" />
-            <xs:attribute name="Hash" type="xs:string" use="optional" />
-            <xs:attribute name="FuzzyZash" type="xs:string" use="optional" />
+            <xs:attribute name="NoLimits" type="EmptyType" use="optional">
+                <xs:annotation><xs:documentation>Disable all collection size and count limits. Required if no limit attributes are set on the Samples element. Use with caution.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Resurrect" type="ResurrectType" use="optional">
+                <xs:annotation><xs:documentation>Include deleted MFT records: yes (all deleted), no (live only), or resident (deleted entries with resident attributes only).</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="ReportAll" type="EmptyType" use="optional">
+                <xs:annotation><xs:documentation>Report all matching entries in the metadata CSV even if they were not collected due to size or count limits.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="FlushRegistry" type="YesNoType" use="optional">
+                <xs:annotation><xs:documentation>Call RegFlushKey for HKEY_USERS and HKEY_LOCAL_MACHINE before collecting registry hive files for more reliable capture.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Hash" type="xs:string" use="optional">
+                <xs:annotation><xs:documentation>Comma-separated list of hash algorithms to compute for collected samples (e.g. MD5,SHA1,SHA256). MD5 and SHA1 are always computed.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="FuzzyZash" type="xs:string" use="optional">
+                <xs:annotation><xs:documentation>Comma-separated list of fuzzy hash algorithms to compute (e.g. SSDeep). Ignored when XOR encoding is used.</xs:documentation></xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
 

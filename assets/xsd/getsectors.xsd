@@ -3,6 +3,7 @@
     <xs:include schemaLocation="common.xsd" />
 
     <xs:element name="getsectors">
+        <xs:annotation><xs:documentation>Collect raw disk sectors from specified drives or volumes for low-level forensic analysis.</xs:documentation></xs:annotation>
         <xs:complexType>
             <xs:sequence>
             </xs:sequence>

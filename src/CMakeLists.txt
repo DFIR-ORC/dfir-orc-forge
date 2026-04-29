@@ -42,6 +42,8 @@ set(SOURCE_FILES
     7z/outmemstream.cpp
     editor/xmlconfigeditor.h
     editor/xmlconfigeditor.cpp
+    editor/xmlcompleter.h
+    editor/xmlcompleter.cpp
     editor/editorhub.h
     editor/editorhub.cpp
     editor/editorinterface.h

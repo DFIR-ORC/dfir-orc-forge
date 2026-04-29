@@ -113,7 +113,9 @@
                 <xs:element name="yara" type="YaraType" minOccurs="0" maxOccurs="unbounded" />
             </xs:choice>
         </xs:sequence>
-        <xs:attribute name="Resurrect" type="ResurrectType" use="optional" default="no" />
+        <xs:attribute name="Resurrect" type="ResurrectType" use="optional" default="no">
+                <xs:annotation><xs:documentation>Include deleted entries: yes (all deleted), no (live only), or resident.</xs:documentation></xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:simpleType name="ShadowsType">
@@ -133,43 +135,103 @@
 
     <!-- Location element -->
     <xs:complexType name="LocationType">
+        <xs:annotation><xs:documentation>Access path to a volume. Use a drive letter (C:), volume ID, UNC path, physical drive path, disk image, or '*' for all mounted volumes. Environment variables and DFIR-ORC dynamic variables are supported.</xs:documentation></xs:annotation>
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="Shadows" type="ShadowsType" use="optional" />
-                <xs:attribute name="Altitude" type="AltitudeType" use="optional" />
-                <xs:attribute name="Exclude" type="xs:string" use="optional" />
+                <xs:attribute name="Shadows" type="ShadowsType" use="optional">
+                    <xs:annotation><xs:documentation>Process volume shadow copies alongside the main volume. Values: yes, no, oldest, mid, newest, or a VSS shadow copy GUID. Multiple values can be combined.</xs:documentation></xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="Altitude" type="AltitudeType" use="optional">
+                    <xs:annotation><xs:documentation>Strategy for accessing the volume: exact (use the mounted volume as-is), highest (above filesystem filters), or lowest (below filters, closest to raw disk).</xs:documentation></xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="Exclude" type="xs:string" use="optional">
+                    <xs:annotation><xs:documentation>Comma-separated list of volumes to exclude from processing. Especially useful when the location value is the wildcard '*'. It is possible to exclude a drive while processing its shadow copies.</xs:documentation></xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
 
     <!-- Yara element -->
     <xs:complexType name="YaraType">
-        <xs:attribute name="source" type="xs:string" use="required" />
-        <xs:attribute name="timeout" type="xs:integer" use="required" />
-        <xs:attribute name="block" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="overlap" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="scan_method" type="xs:string" use="optional" />
+        <xs:annotation><xs:documentation>Configure YARA rule scanning. Specifies rule file(s) and scanning parameters used during file collection or search.</xs:documentation></xs:annotation>
+        <xs:attribute name="source" type="xs:string" use="required">
+            <xs:annotation><xs:documentation>Comma- or semicolon-separated list of YARA rule files. Can be file paths relative to the executable or embedded resource references (res:#ResourceName).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="timeout" type="xs:integer" use="required">
+            <xs:annotation><xs:documentation>Number of seconds after which the YARA engine aborts scanning a single file. Applies per-file individually.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="block" type="ByteQuantityType" use="optional">
+            <xs:annotation><xs:documentation>Buffer size for block-based scanning (e.g. 2M, 4K). Should be at least the largest expected file size to avoid missing matches that span block boundaries.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="overlap" type="ByteQuantityType" use="optional">
+            <xs:annotation><xs:documentation>Overlap between consecutive scan blocks to catch matches that straddle a block boundary (e.g. 4K, 8192).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="scan_method" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>File scanning method. Supported values:
+            - 'blocks' (recommended): uses YARA's streaming API, but due to limited
+              module compatibility (e.g., PE module), it currently behaves similarly
+              to whole-file mapping. 'block' and 'overlap' settings are ignored.
+            - 'blocks_legacy': legacy chunked scanning; not fully compatible with all
+              YARA modules.
+            - 'filemapping': maps the entire file into memory; high memory usage and
+              not recommended for live systems.</xs:documentation></xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:attributeGroup name="NtfsAttributeGroup">
-        <xs:attribute name="name" type="xs:string" use="optional" />
-        <xs:attribute name="name_match" type="xs:string" use="optional" />
-        <xs:attribute name="name_regex" type="xs:string" use="optional" />
-        <xs:attribute name="path" type="AbsolutePathWithoutDriveType" use="optional" />
-        <xs:attribute name="path_match" type="xs:string" use="optional" />
-        <xs:attribute name="path_regex" type="xs:string" use="optional" />
-        <xs:attribute name="size" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="size_gt" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="size_ge" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="size_lt" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="size_le" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="ads" type="xs:string" use="optional" />
-        <xs:attribute name="ads_match" type="xs:string" use="optional" />
-        <xs:attribute name="ads_regex" type="xs:string" use="optional" />
-        <xs:attribute name="md5" type="Md5Type" use="optional" />
-        <xs:attribute name="sha1" type="Sha1Type" use="optional" />
-        <xs:attribute name="sha256" type="Sha256Type" use="optional" />
+        <xs:attribute name="name" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Exact file name to match (case-insensitive).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="name_match" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Wildcard pattern for file name matching (case-insensitive, e.g. *.dll).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="name_regex" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Regular expression for file name matching.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="path" type="AbsolutePathWithoutDriveType" use="optional">
+            <xs:annotation><xs:documentation>Absolute path without drive letter for exact path matching (e.g. \Windows\System32\cmd.exe).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="path_match" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Wildcard pattern for full path matching.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="path_regex" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Regular expression for full path matching.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="size" type="ByteQuantityType" use="optional">
+            <xs:annotation><xs:documentation>Exact file size to match (e.g. 1024, 4KB).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="size_gt" type="ByteQuantityType" use="optional">
+            <xs:annotation><xs:documentation>Match files strictly larger than this size (e.g. 1MB).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="size_ge" type="ByteQuantityType" use="optional">
+            <xs:annotation><xs:documentation>Match files of this size or larger (e.g. 1MB).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="size_lt" type="ByteQuantityType" use="optional">
+            <xs:annotation><xs:documentation>Match files strictly smaller than this size (e.g. 1MB).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="size_le" type="ByteQuantityType" use="optional">
+            <xs:annotation><xs:documentation>Match files of this size or smaller (e.g. 1MB).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ads" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Exact name of an NTFS alternate data stream to match.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ads_match" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Wildcard pattern for alternate data stream name matching.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ads_regex" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Regular expression for alternate data stream name matching.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="md5" type="Md5Type" use="optional">
+            <xs:annotation><xs:documentation>MD5 hash (32 hex chars) that the file content must match.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="sha1" type="Sha1Type" use="optional">
+            <xs:annotation><xs:documentation>SHA-1 hash (40 hex chars) that the file content must match.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="sha256" type="Sha256Type" use="optional">
+            <xs:annotation><xs:documentation>SHA-256 hash (64 hex chars) that the file content must match.</xs:documentation></xs:annotation>
+        </xs:attribute>
         <xs:attribute name="header" use="optional">
+            <xs:annotation><xs:documentation>ASCII string (up to 128 chars) that must appear at the start of the file content.</xs:documentation></xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="xs:string">
                     <xs:minLength value="1" />
@@ -178,33 +240,60 @@
             </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="header_hex">
+            <xs:annotation><xs:documentation>Hex string (up to 256 chars) representing bytes that must appear at the start of the file.</xs:documentation></xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="HexStringType">
                     <xs:maxLength value="256" />
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
-        <xs:attribute name="header_regex" type="xs:string" use="optional" />
-        <xs:attribute name="header_length" type="xs:integer" use="optional" />
-        <xs:attribute name="contains" type="xs:string" use="optional" />
-        <xs:attribute name="contains_hex" type="HexStringType" use="optional" />
-        <xs:attribute name="yara_rule" type="xs:string" use="optional" />
-        <xs:attribute name="attr_name" type="xs:string" use="optional" />
-        <xs:attribute name="attr_match" type="xs:string" use="optional" />
-        <xs:attribute name="attr_regex" type="xs:string" use="optional" />
-        <xs:attribute name="attr_type" type="xs:string" use="optional" />
+        <xs:attribute name="header_regex" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Regular expression matched against the file header bytes.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="header_length" type="xs:integer" use="optional">
+            <xs:annotation><xs:documentation>Number of bytes to read from the file header for matching (default is determined by the header/header_hex/header_regex value length).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="contains" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>ASCII string that must appear anywhere in the file content.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="contains_hex" type="HexStringType" use="optional">
+            <xs:annotation><xs:documentation>Hex-encoded byte sequence that must appear anywhere in the file content.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="yara_rule" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Name of a YARA rule (from the configured yara element) that must match the file content.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="attr_name" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Exact NTFS attribute name to match.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="attr_match" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Wildcard pattern for NTFS attribute name matching.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="attr_regex" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Regular expression for NTFS attribute name matching.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="attr_type" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>NTFS attribute type code to match (e.g. $DATA, $FILE_NAME).</xs:documentation></xs:annotation>
+        </xs:attribute>
     </xs:attributeGroup>
 
     <!-- NtfsFind element -->
     <xs:complexType name="NtfsFindType" ui:attributes="list">
+        <xs:annotation><xs:documentation>NTFS file/attribute search criteria. All specified attributes are AND-ed. Matches are collected or reported. Combine with ntfs_exclude to filter out unwanted results.</xs:documentation></xs:annotation>
         <xs:attributeGroup ref="NtfsAttributeGroup" />
-        <xs:attribute name="ea" type="xs:string" use="optional" />
-        <xs:attribute name="ea_match" type="xs:string" use="optional" />
-        <xs:attribute name="ea_regex" type="xs:string" use="optional" />
+        <xs:attribute name="ea" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Exact extended attribute name to match.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ea_match" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Wildcard pattern for extended attribute name matching.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ea_regex" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Regular expression for extended attribute name matching.</xs:documentation></xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <!-- NtfsExclude element -->
     <xs:complexType name="NtfsExcludeType" ui:attributes="list">
+        <xs:annotation><xs:documentation>NTFS exclusion criteria. Entries matching these attributes are excluded from collection even if they match an ntfs_find rule. Scope is the whole configuration file.</xs:documentation></xs:annotation>
         <xs:attributeGroup ref="NtfsAttributeGroup" />
     </xs:complexType>
 
@@ -330,16 +419,33 @@
     </xs:simpleType>
 
     <xs:complexType name="OutputType">
+        <xs:annotation><xs:documentation>Output destination for collected data: a file path, directory, or archive. Supports environment variables and DFIR-ORC pattern substitutions.</xs:documentation></xs:annotation>
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="Format" type="FormatType" use="optional" />
-                <xs:attribute name="Compression" type="CompressionType" use="optional" />
-                <xs:attribute name="Encoding" type="EncodingType" use="optional" />
-                <xs:attribute name="Disposition" type="DispositionType" use="optional" />
-                <xs:attribute name="Password" type="xs:string" use="optional" />
-                <xs:attribute name="ConnectionString" type="xs:string" use="optional" />
-                <xs:attribute name="Key" type="xs:string" use="optional" />
-                <xs:attribute name="Table" type="xs:string" use="optional" />
+                <xs:attribute name="Format" type="FormatType" use="optional">
+                    <xs:annotation><xs:documentation>Archive format when the output path is an archive: 7z or zip.</xs:documentation></xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="Compression" type="CompressionType" use="optional">
+                    <xs:annotation><xs:documentation>Compression level for archive output: none, fastest, fast, normal, maximum, or ultra.</xs:documentation></xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="Encoding" type="EncodingType" use="optional">
+                    <xs:annotation><xs:documentation>Text encoding for CSV output files: utf-8 or utf-16.</xs:documentation></xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="Disposition" type="DispositionType" use="optional">
+                    <xs:annotation><xs:documentation>File handling when the output already exists: truncate (overwrite, default) or append.</xs:documentation></xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="Password" type="xs:string" use="optional">
+                    <xs:annotation><xs:documentation>Password for encrypted archive output. Preferred over XOR for protecting collected data from antivirus interference.</xs:documentation></xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="ConnectionString" type="xs:string" use="optional">
+                    <xs:annotation><xs:documentation>Database connection string for SQL output destinations.</xs:documentation></xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="Key" type="xs:string" use="optional">
+                    <xs:annotation><xs:documentation>Key column name for SQL/structured output.</xs:documentation></xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="Table" type="xs:string" use="optional">
+                    <xs:annotation><xs:documentation>Target table name for SQL output.</xs:documentation></xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
@@ -379,8 +485,12 @@
     </xs:simpleType>
 
     <xs:attributeGroup name="LogLevelAttributeGroup">
-        <xs:attribute name="Level" type="LogLevelType" use="optional" />
-        <xs:attribute name="Backtrace" type="LogLevelType" use="optional" />
+        <xs:attribute name="Level" type="LogLevelType" use="optional">
+            <xs:annotation><xs:documentation>Minimum log level to emit: trace, debug, info, warning, error, critical, or off.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Backtrace" type="LogLevelType" use="optional">
+            <xs:annotation><xs:documentation>Log level that triggers emission of a debug backtrace (captures logs down to the 'debug' level). Use 'off' to disable.</xs:documentation></xs:annotation>
+        </xs:attribute>
     </xs:attributeGroup>
 
     <xs:complexType name="LogType">
@@ -460,10 +570,15 @@
     </xs:simpleType>
 
     <xs:complexType name="RecipientType">
+        <xs:annotation><xs:documentation>CMS/PKCS#7 certificate for archive encryption. The element text content is the DER-encoded certificate (base64). Multiple recipients can be specified.</xs:documentation></xs:annotation>
         <xs:simpleContent>
             <xs:extension base="xs:string">
-              <xs:attribute name="Name" type="xs:string" use="required"/>
-              <xs:attribute name="Archive" type="xs:string" use="required"/>
+              <xs:attribute name="Name" type="xs:string" use="required">
+                  <xs:annotation><xs:documentation>Identifier for this recipient, used in log messages.</xs:documentation></xs:annotation>
+              </xs:attribute>
+              <xs:attribute name="Archive" type="xs:string" use="required">
+                  <xs:annotation><xs:documentation>Name (or wildcard pattern) of the archive(s) this certificate applies to for encryption.</xs:documentation></xs:annotation>
+              </xs:attribute>
             </xs:extension>
           </xs:simpleContent>
     </xs:complexType>
@@ -481,24 +596,48 @@
     </xs:simpleType>
 
     <xs:complexType name="UploadType">
-        <xs:attribute name="Job" type="YesNoType" use="optional" />
-        <xs:attribute name="Method" type="UploadMethodType" use="required" />
-        <xs:attribute name="Server" type="UrlHostType" use="required" />
+        <xs:annotation><xs:documentation>Configure automatic upload of collected archives to a remote server after execution completes.</xs:documentation></xs:annotation>
+        <xs:attribute name="Job" type="YesNoType" use="optional">
+            <xs:annotation><xs:documentation>If yes, use Background Intelligent Transfer Service (BITS) job management for upload.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Method" type="UploadMethodType" use="required">
+            <xs:annotation><xs:documentation>Upload protocol: bits (BITS/HTTP) or filecopy (SMB file copy).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Server" type="UrlHostType" use="required">
+            <xs:annotation><xs:documentation>Target server URL including scheme and host (e.g. https://server.example.com or file://\\server\share).</xs:documentation></xs:annotation>
+        </xs:attribute>
         <xs:attribute name="Path" use="required">
+            <xs:annotation><xs:documentation>Server-side path where files will be uploaded. Must start with '/'.</xs:documentation></xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="xs:string">
                     <xs:pattern value="/.*" />
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
-        <xs:attribute name="User" type="xs:string" use="optional" />
-        <xs:attribute name="Password" type="xs:string" use="optional" />
-        <xs:attribute name="Authscheme" type="AuthSchemeType" use="optional" />
-        <xs:attribute name="Operation" type="OperationType" use="optional" />
-        <xs:attribute name="Mode" type="ModeType" use="optional" />
-        <xs:attribute name="Include" type="xs:string" use="optional" />
-        <xs:attribute name="Exclude" type="xs:string" use="optional" />
-        <xs:attribute name="delete_smb_share" type="TrueFalseType" use="optional" />
+        <xs:attribute name="User" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Username for authenticated upload.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Password" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Password for authenticated upload.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Authscheme" type="AuthSchemeType" use="optional">
+            <xs:annotation><xs:documentation>HTTP authentication scheme: anonymous, basic, ntlm, kerberos, or negotiate.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Operation" type="OperationType" use="optional">
+            <xs:annotation><xs:documentation>File operation after successful upload: copy (leave source intact) or move (delete source after upload).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Mode" type="ModeType" use="optional">
+            <xs:annotation><xs:documentation>Upload timing: sync (wait for upload to complete before proceeding) or async (upload in background).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Include" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Wildcard pattern for archive file names to include in the upload.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Exclude" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Wildcard pattern for archive file names to exclude from the upload.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="delete_smb_share" type="TrueFalseType" use="optional">
+            <xs:annotation><xs:documentation>If true, delete the SMB share after completing the filecopy upload.</xs:documentation></xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:simpleType name="ArchiveRepeatType">
@@ -510,11 +649,21 @@
     </xs:simpleType>
 
     <xs:complexType name="ArchiveRestrictionType">
-        <xs:attribute name="Jobmemorylimit" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="Processmemorylimit" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="Elapsedtimelimit" type="xs:nonNegativeInteger" use="optional" />
-        <xs:attribute name="Jobcpulimit" type="xs:nonNegativeInteger" use="optional" />
-        <xs:attribute name="Processcpulimit" type="xs:nonNegativeInteger" use="optional" />
+        <xs:attribute name="Jobmemorylimit" type="ByteQuantityType" use="optional">
+            <xs:annotation><xs:documentation>Maximum total memory for all processes in the job object (e.g. 2GB). Commands will not run if memory usage exceeds this limit.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Processmemorylimit" type="ByteQuantityType" use="optional">
+            <xs:annotation><xs:documentation>Maximum memory per individual process in the job (e.g. 512MB).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Elapsedtimelimit" type="xs:nonNegativeInteger" use="optional">
+            <xs:annotation><xs:documentation>Maximum wall-clock time in seconds allowed for the entire job.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Jobcpulimit" type="xs:nonNegativeInteger" use="optional">
+            <xs:annotation><xs:documentation>CPU usage limit (percentage) for all processes in the job combined.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Processcpulimit" type="xs:nonNegativeInteger" use="optional">
+            <xs:annotation><xs:documentation>CPU usage limit (percentage) per individual process in the job.</xs:documentation></xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:simpleType name="WinVerType">
@@ -587,13 +736,27 @@
                 <xs:element name="Output" type="CommandOutputType" />
             </xs:choice>
         </xs:sequence>
-        <xs:attribute name="Keyword" type="xs:string" use="required" />
-        <xs:attribute name="Timeout" type="xs:positiveInteger" use="optional" />
-        <xs:attribute name="Winver" type="WinVerType" use="optional" />
-        <xs:attribute name="Queue" type="CommandQueueType" use="optional" />
-        <xs:attribute name="SystemType" type="SystemType" use="optional" />
-        <xs:attribute name="DiskFree" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="Optional" type="YesNoType" use="optional" />
+        <xs:attribute name="Keyword" type="xs:string" use="required">
+            <xs:annotation><xs:documentation>Unique identifier for this command within the archive. Used for logging and dependency tracking.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Timeout" type="xs:positiveInteger" use="optional">
+            <xs:annotation><xs:documentation>Maximum execution time in seconds for this command before it is forcibly terminated.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Winver" type="WinVerType" use="optional">
+            <xs:annotation><xs:documentation>Minimum Windows version required to run this command (e.g. 6.1, 10.0+). Command is skipped on older systems.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Queue" type="CommandQueueType" use="optional">
+            <xs:annotation><xs:documentation>Execution queue mode: flush (wait for all previous commands to finish) or anytime (run when a slot is free).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="SystemType" type="SystemType" use="optional">
+            <xs:annotation><xs:documentation>Required system role to run this command: workstation, server, or domaincontroller. Multiple values can be combined with '|'.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="DiskFree" type="ByteQuantityType" use="optional">
+            <xs:annotation><xs:documentation>Minimum free disk space required to run this command (e.g. 500MB). Command is skipped if disk is too full.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Optional" type="YesNoType" use="optional">
+            <xs:annotation><xs:documentation>If yes, failure of this command does not abort the archive or overall execution.</xs:documentation></xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="ArchiveType">
@@ -601,34 +764,67 @@
             <xs:element name="Restrictions" type="ArchiveRestrictionType" minOccurs="0" />
             <xs:element name="Command" type="ArchiveCommandType" minOccurs="0" maxOccurs="unbounded" />
         </xs:sequence>
-        <xs:attribute name="Name" type="xs:string" use="required" />
-        <xs:attribute name="Keyword" type="xs:string" use="required" />
-        <xs:attribute name="Concurrency" type="xs:positiveInteger" use="required" />
-        <xs:attribute name="Optional" type="YesNoType" use="optional" />
-        <xs:attribute name="Repeat" type="ArchiveRepeatType" use="required" />
-        <xs:attribute name="Compression" type="CompressionType" use="optional" />
-        <xs:attribute name="command_timeout" type="xs:nonNegativeInteger" use="optional" />
-        <xs:attribute name="archive_timeout" type="xs:nonNegativeInteger" use="optional" />
-        <xs:attribute name="PhysicalMemory" type="ByteQuantityComparisonType" use="optional" />
-        <xs:attribute name="DiskFree" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="ChildDebug" type="YesNoType" use="optional" />
+        <xs:attribute name="Name" type="xs:string" use="required">
+            <xs:annotation><xs:documentation>Unique name for this archive, used in output file naming patterns.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Keyword" type="xs:string" use="required">
+            <xs:annotation><xs:documentation>Output file name pattern for this archive. Supports substitution variables like {SystemType}, {FullComputerName}, {TimeStamp}.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Concurrency" type="xs:positiveInteger" use="required">
+            <xs:annotation><xs:documentation>Maximum number of commands that may run simultaneously within this archive.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Optional" type="YesNoType" use="optional">
+            <xs:annotation><xs:documentation>If yes, failure of this archive does not abort the overall DFIR-ORC execution.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Repeat" type="ArchiveRepeatType" use="required">
+            <xs:annotation><xs:documentation>Archive creation policy if the output file already exists: createnew, overwrite, or once (skip if already present).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Compression" type="CompressionType" use="optional">
+            <xs:annotation><xs:documentation>Default compression level for this archive: none, fastest, fast, normal, maximum, or ultra.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="command_timeout" type="xs:nonNegativeInteger" use="optional">
+            <xs:annotation><xs:documentation>Time in minutes to wait for all commands in this archive to complete before forcing termination (default: 3 hours).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="archive_timeout" type="xs:nonNegativeInteger" use="optional">
+            <xs:annotation><xs:documentation>Time in minutes to wait for archive finalization after commands finish (default: 5 minutes).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="PhysicalMemory" type="ByteQuantityComparisonType" use="optional">
+            <xs:annotation><xs:documentation>Physical memory requirement to run this archive (e.g. gt4GB). Archive is skipped if the condition is not met.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="DiskFree" type="ByteQuantityType" use="optional">
+            <xs:annotation><xs:documentation>Minimum free disk space required to run this archive (e.g. 1GB).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ChildDebug" type="YesNoType" use="optional">
+            <xs:annotation><xs:documentation>If yes, attaches as a debugger to all child processes to capture memory dumps on unhandled exceptions.</xs:documentation></xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:attributeGroup name="MaxLimitsGroupType">
-        <xs:attribute name="MaxPerSamplebytes" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="MaxTotalBytes" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="MaxSampleCount" type="xs:nonNegativeInteger" use="optional" />
+        <xs:attribute name="MaxPerSamplebytes" type="ByteQuantityType" use="optional">
+            <xs:annotation><xs:documentation>Maximum size of a single collected sample file (e.g. 50MB). Samples exceeding this limit are not collected.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="MaxTotalBytes" type="ByteQuantityType" use="optional">
+            <xs:annotation><xs:documentation>Maximum total size of all collected samples combined (e.g. 1024MB). Collection stops once this limit is reached.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="MaxSampleCount" type="xs:nonNegativeInteger" use="optional">
+            <xs:annotation><xs:documentation>Maximum number of individual samples to collect. Collection stops once this count is reached.</xs:documentation></xs:annotation>
+        </xs:attribute>
     </xs:attributeGroup>
 
     <xs:complexType name="SampleType">
+        <xs:annotation><xs:documentation>A named collection group with its own ntfs_find criteria and optional per-sample limits. Collected files are grouped under this sample's name in the output archive.</xs:documentation></xs:annotation>
         <xs:sequence>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element name="ntfs_find" type="NtfsFindType" />
                 <xs:element name="ntfs_exclude" type="NtfsExcludeType" />
             </xs:choice>
         </xs:sequence>
-        <xs:attribute name="Name" type="xs:string" />
-        <xs:attribute name="Content" type="SampleContentType" use="optional" />
+        <xs:attribute name="Name" type="xs:string">
+            <xs:annotation><xs:documentation>Identifier for this sample group. Collected files are placed in a folder with this name inside the output archive.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Content" type="SampleContentType" use="optional">
+            <xs:annotation><xs:documentation>Data retrieval mode for matched NTFS attributes: data (default $DATA stream), raw (raw attribute bytes), or strings (extracted printable strings with optional min/max length).</xs:documentation></xs:annotation>
+        </xs:attribute>
         <xs:attributeGroup ref="MaxLimitsGroupType" />
     </xs:complexType>
 
@@ -639,6 +835,7 @@
     </xs:simpleType>
 
     <xs:complexType name="GetThisSamplesType">
+        <xs:annotation><xs:documentation>Top-level collection container with global size and count limits. At least one limit must be set, or NoLimits must be specified on the parent element.</xs:documentation></xs:annotation>
         <xs:sequence>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element name="ntfs_find" type="NtfsFindType" />
@@ -648,7 +845,11 @@
             <xs:element name="Sample" type="SampleType" minOccurs="0" maxOccurs="unbounded" />
         </xs:sequence>
         <xs:attributeGroup ref="MaxLimitsGroupType" />
-        <xs:attribute name="Content" type="SampleContentType" use="optional" />
-        <xs:attribute name="samplenameformat" type="SampleNameFormatType" use="optional" />
+        <xs:attribute name="Content" type="SampleContentType" use="optional">
+            <xs:annotation><xs:documentation>Default data retrieval mode applied to all samples unless overridden: data, raw, or strings.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="samplenameformat" type="SampleNameFormatType" use="optional">
+            <xs:annotation><xs:documentation>Naming scheme for collected output files: default (FRN-prefixed) or qualifierthenfrn (qualifier-first naming).</xs:documentation></xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 </xs:schema>

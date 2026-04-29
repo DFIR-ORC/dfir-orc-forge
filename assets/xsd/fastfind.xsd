@@ -3,16 +3,31 @@
     <xs:include schemaLocation="common.xsd" />
 
     <xs:element name="fastfind">
+        <xs:annotation><xs:documentation>Search NTFS volumes, registry hives and named kernel objects for indicators of compromise. Results are written to structured output files.</xs:documentation></xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="log" type="LogType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="output_filesystem" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="output_registry" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="filesystem" type="FilesystemType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="registry" type="RegistryType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="object" type="ObjectType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="log" type="LogType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Configure log output sinks (console, file) and their log levels.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="output_filesystem" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Output file for filesystem (NTFS) search results.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="output_registry" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Output file for registry search results.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="filesystem" type="FilesystemType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>NTFS filesystem search scope: locations and ntfs_find/ntfs_exclude criteria.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="registry" type="RegistryType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Registry search scope: locations, hive definitions and registry_find criteria.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="object" type="ObjectType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Kernel named-object search scope: object_find criteria for mutexes, events, pipes and other named objects.</xs:documentation></xs:annotation>
+                </xs:element>
             </xs:sequence>
-            <xs:attribute name="version" type="xs:string" use="optional" />
+            <xs:attribute name="version" type="xs:string" use="optional">
+                <xs:annotation><xs:documentation>Optional version string embedded in the output for identification purposes.</xs:documentation></xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
 

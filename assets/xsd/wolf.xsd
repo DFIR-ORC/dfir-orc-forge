@@ -3,20 +3,43 @@
     <xs:include schemaLocation="common.xsd" />
 
     <xs:element name="wolf">
+        <xs:annotation><xs:documentation>DFIR-ORC orchestrator configuration. Defines archives, commands, upload settings, encryption recipients and global execution parameters.</xs:documentation></xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="Log" type="LogWithSyslogType" minOccurs="0" />
-                <xs:element name="Console" type="ConsoleType" minOccurs="0" />
-                <xs:element name="Outline" type="OutputType" minOccurs="0" />
-                <xs:element name="Outcome" type="OutputType" minOccurs="0" />
-                <xs:element name="Upload" type="UploadType" minOccurs="0" />
-                <xs:element name="Recipient" type="RecipientType" minOccurs="0" maxOccurs="unbounded" />
-                <xs:element name="Archive" type="ArchiveType" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="Log" type="LogWithSyslogType" minOccurs="0">
+                    <xs:annotation><xs:documentation>Configure log output sinks (console, file, syslog) and their log levels.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Console" type="ConsoleType" minOccurs="0">
+                    <xs:annotation><xs:documentation>Capture human-readable console output to a file alongside normal log output.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Outline" type="OutputType" minOccurs="0">
+                    <xs:annotation><xs:documentation>Output file for the execution outline: a structured JSON summary of what ran and what was produced.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Outcome" type="OutputType" minOccurs="0">
+                    <xs:annotation><xs:documentation>Output file for the execution outcome: a structured summary of results and any errors encountered.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Upload" type="UploadType" minOccurs="0">
+                    <xs:annotation><xs:documentation>Configure automatic upload of collected archives to a remote server after execution.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Recipient" type="RecipientType" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation><xs:documentation>CMS/PKCS#7 certificate for encrypting collected archives. Multiple recipients can be specified.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Archive" type="ArchiveType" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation><xs:documentation>A named archive grouping related commands whose output files are collected together into a single archive.</xs:documentation></xs:annotation>
+                </xs:element>
             </xs:sequence>
-            <xs:attribute name="ChildDebug" type="YesNoType" use="optional" />
-            <xs:attribute name="command_timeout" type="xs:nonNegativeInteger" use="optional" />
-            <xs:attribute name="archive_timeout" type="xs:nonNegativeInteger" use="optional" />
-            <xs:attribute name="WerDontShowUI" type="YesNoType" use="optional" />
+            <xs:attribute name="ChildDebug" type="YesNoType" use="optional">
+                <xs:annotation><xs:documentation>Attach as debugger to all child processes to capture memory dumps on unhandled exceptions (crashes).</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="command_timeout" type="xs:nonNegativeInteger" use="optional">
+                <xs:annotation><xs:documentation>Global time in minutes to wait for the last command(s) to complete before forcing termination (default: 3 hours).</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="archive_timeout" type="xs:nonNegativeInteger" use="optional">
+                <xs:annotation><xs:documentation>Global time in minutes to wait for archive finalization after all commands finish (default: 5 minutes).</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="WerDontShowUI" type="YesNoType" use="optional">
+                <xs:annotation><xs:documentation>Suppress Windows Error Reporting blocking UI dialogs during execution. Previous WER configuration is restored afterward.</xs:documentation></xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
 </xs:schema>

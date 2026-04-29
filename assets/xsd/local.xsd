@@ -3,19 +3,40 @@
     <xs:include schemaLocation="common.xsd" />
 
     <xs:element name="dfir-orc">
+        <xs:annotation><xs:documentation>DFIR-ORC local configuration file. Overrides settings from the embedded wolf configuration at runtime without recompiling the executable.</xs:documentation></xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="Log" type="LogType" minOccurs="0" />
-                <xs:element name="Output" type="xs:string" minOccurs="0" maxOccurs="1" />
-                <xs:element name="Temporary" type="xs:string" minOccurs="0" maxOccurs="1" />
-                <xs:element name="Upload" type="UploadType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="Recipient" type="RecipientType" minOccurs="0" />
-                <xs:element name="Key" type="KeyType" minOccurs="0" />
-                <xs:element name="enable_key" type="EnableKeyType" minOccurs="0" />
-                <xs:element name="disable_key" type="DisableKeyType" minOccurs="0" />
+                <xs:element name="Log" type="LogType" minOccurs="0">
+                    <xs:annotation><xs:documentation>Override log output sinks and levels from the local machine.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Output" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Override the output directory or archive path for collected data.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Temporary" type="xs:string" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Override the temporary directory used during execution.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Upload" type="UploadType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Override or add upload configuration for sending collected archives to a remote server.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Recipient" type="RecipientType" minOccurs="0">
+                    <xs:annotation><xs:documentation>Add a local CMS/PKCS#7 certificate for archive encryption.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Key" type="KeyType" minOccurs="0">
+                    <xs:annotation><xs:documentation>Activation key enabling restricted functionality in the executable.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="enable_key" type="EnableKeyType" minOccurs="0">
+                    <xs:annotation><xs:documentation>Key that enables a specific feature or archive at runtime.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="disable_key" type="DisableKeyType" minOccurs="0">
+                    <xs:annotation><xs:documentation>Key that disables a specific feature or archive at runtime.</xs:documentation></xs:annotation>
+                </xs:element>
             </xs:sequence>
-            <xs:attribute name="Priority" type="PriorityClassType" use="optional" />
-            <xs:attribute name="Powerstate" type="PowerStateType" use="optional" />
+            <xs:attribute name="Priority" type="PriorityClassType" use="optional">
+                <xs:annotation><xs:documentation>Override the process priority class: low or high.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Powerstate" type="PowerStateType" use="optional">
+                <xs:annotation><xs:documentation>Request a power state during execution: systemrequired, displayrequired, userpresent, or awaymode.</xs:documentation></xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
 </xs:schema>

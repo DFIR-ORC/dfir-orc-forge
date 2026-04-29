@@ -16,6 +16,7 @@
 #include <QTextDocument>
 #include <QVBoxLayout>
 
+#include "editor/xmlcompleter.h"
 #include "editor/xmlhighlighter.h"
 #include "formatter/formatter.h"
 #include "utils/guard.h"
@@ -219,6 +220,15 @@ XmlConfigEditor::XmlConfigEditor(XsdStore &xsdStore, QWidget *parent)
         });
 
     new XmlHighlighter(editor_->document());
+
+    completer_ = new XmlCompleter(xsdStore_, this);
+    completer_->attach(editor_);
+
+    connect(
+        this,
+        &XmlConfigEditor::configIdentifierChanged,
+        completer_,
+        &XmlCompleter::setConfigIdentifier);
 }
 
 XmlConfigEditor::~XmlConfigEditor() {}

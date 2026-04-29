@@ -86,16 +86,31 @@
     </xs:complexType>
 
     <xs:element name="fatinfo">
+        <xs:annotation><xs:documentation>Enumerate FAT file system entries and metadata from specified locations. Similar to NTFSInfo but for FAT12/FAT16/FAT32 volumes.</xs:documentation></xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="log" type="LogType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="output" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="location" type="LocationType" minOccurs="0" maxOccurs="unbounded" />
-                <xs:element name="columns" type="FatInfoColumnsType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="log" type="LogType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Configure log output sinks (console, file) and their log levels.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="output" type="OutputType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Output file for FAT file system enumeration results (CSV).</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="location" type="LocationType" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation><xs:documentation>FAT volume or path to enumerate.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="columns" type="FatInfoColumnsType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Customize which output columns to include, add or omit from the default column set.</xs:documentation></xs:annotation>
+                </xs:element>
             </xs:sequence>
-            <xs:attribute name="Resurrect" type="ResurrectType" use="optional" />
-            <xs:attribute name="Computer" type="ComputerNameType" use="optional" />
-            <xs:attribute name="PopSysObj" type="EmptyType" use="optional" />
+            <xs:attribute name="Resurrect" type="ResurrectType" use="optional">
+                <xs:annotation><xs:documentation>Include deleted FAT directory entries: yes (all deleted), no (live only), or resident.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="Computer" type="ComputerNameType" use="optional">
+                <xs:annotation><xs:documentation>Override the computer name written in the ComputerName column of the output file.</xs:documentation></xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="PopSysObj" type="EmptyType" use="optional">
+                <xs:annotation><xs:documentation>Include FAT system entries in the enumeration output.</xs:documentation></xs:annotation>
+            </xs:attribute>
         </xs:complexType>
     </xs:element>
 
