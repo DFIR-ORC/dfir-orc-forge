@@ -33,6 +33,9 @@ SearchWidget::SearchWidget(QTextEdit *textEdit, QWidget *parent)
     setupUI();
     setupConnections();
     setupStyling();
+    // Force native window creation and style polishing while the parent is still
+    // hidden, so the first real show() is just a repaint with no stutter.
+    show();
     hide();
 }
 
