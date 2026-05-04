@@ -148,7 +148,7 @@ void SearchWidget::setupUI()
     m_findNextButton->setToolTip("Next (Enter)");
 
     m_matchLabel = new QLabel("0 of 0");
-    m_matchLabel->setMinimumWidth(50);
+    m_matchLabel->setMinimumWidth(m_matchLabel->fontMetrics().horizontalAdvance("100 of 100") + 8);
     m_matchLabel->setAlignment(Qt::AlignCenter);
 
     m_closeButton = new QPushButton("✕");
