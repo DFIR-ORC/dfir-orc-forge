@@ -184,7 +184,7 @@ void XmlConfigEditor::validate()
     }
 
     auto xml = document.value();
-    auto schema = xsdStore_.getSchemaCache();
+    auto schema = xsdStore_.getNormalizedSchema();
     if (!schema) {
         status_->setText("No schema available", StatusType::Error);
         return;

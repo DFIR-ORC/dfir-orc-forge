@@ -5,17 +5,17 @@
     <xs:element name="dfir-orc">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="log" type="LogType" minOccurs="0" />
-                <xs:element name="output" type="xs:string" minOccurs="0" maxOccurs="1" />
-                <xs:element name="temporary" type="xs:string" minOccurs="0" maxOccurs="1" />
-                <xs:element name="upload" type="UploadType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="recipient" type="RecipientType" minOccurs="0" />
-                <xs:element name="key" type="KeyType" minOccurs="0" />
+                <xs:element name="Log" type="LogType" minOccurs="0" />
+                <xs:element name="Output" type="xs:string" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Temporary" type="xs:string" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Upload" type="UploadType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Recipient" type="RecipientType" minOccurs="0" />
+                <xs:element name="Key" type="KeyType" minOccurs="0" />
                 <xs:element name="enable_key" type="EnableKeyType" minOccurs="0" />
                 <xs:element name="disable_key" type="DisableKeyType" minOccurs="0" />
             </xs:sequence>
-            <xs:attribute name="priority" type="PriorityClassType" use="optional" />
-            <xs:attribute name="powerstate" type="PowerStateType" use="optional" />
+            <xs:attribute name="Priority" type="PriorityClassType" use="optional" />
+            <xs:attribute name="Powerstate" type="PowerStateType" use="optional" />
         </xs:complexType>
     </xs:element>
 </xs:schema>

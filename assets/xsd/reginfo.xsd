@@ -34,17 +34,17 @@
     <xs:element name="reginfo">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="log" type="LogType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="output" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="location" type="LocationType" minOccurs="0" maxOccurs="unbounded" />
-                <xs:element name="information" type="RegInfoColumnsItemsType" minOccurs="0"
+                <xs:element name="Log" type="LogType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Output" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Location" type="LocationType" minOccurs="0" maxOccurs="unbounded" />
+                <xs:element name="Information" type="RegInfoColumnsItemsType" minOccurs="0"
                     maxOccurs="1" />
-                <xs:element name="hive" type="HiveType" minOccurs="0" maxOccurs="unbounded" />
-                <xs:element name="knownlocations" type="xs:string" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Hive" type="HiveType" minOccurs="0" maxOccurs="unbounded" />
+                <xs:element name="KnownLocations" type="xs:string" minOccurs="0" maxOccurs="1" />
                 <xs:element name="csv_limit" type="xs:nonNegativeInteger" minOccurs="0"
                     maxOccurs="1" />
             </xs:sequence>
-            <xs:attribute name="computer" type="ComputerNameType" use="optional" />
+            <xs:attribute name="Computer" type="ComputerNameType" use="optional" />
         </xs:complexType>
     </xs:element>
 

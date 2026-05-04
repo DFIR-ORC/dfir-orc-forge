@@ -5,12 +5,12 @@
     <xs:element name="usninfo">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="log" type="LogType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="output" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="location" type="LocationType" minOccurs="0" maxOccurs="unbounded" />
-                <xs:element name="knownlocations" type="xs:string" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Log" type="LogType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Output" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Location" type="LocationType" minOccurs="0" maxOccurs="unbounded" />
+                <xs:element name="KnownLocations" type="xs:string" minOccurs="0" maxOccurs="1" />
             </xs:sequence>
-            <xs:attribute name="compact" type="YesNoType" use="optional" />
+            <xs:attribute name="Compact" type="YesNoType" use="optional" />
         </xs:complexType>
     </xs:element>
 

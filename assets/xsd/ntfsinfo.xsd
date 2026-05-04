@@ -133,10 +133,10 @@
                 <xs:element name="location" type="LocationType" minOccurs="0" maxOccurs="unbounded" />
                 <xs:element name="columns" type="NtfsInfoColumnsType" minOccurs="0" maxOccurs="1" />
             </xs:sequence>
-            <xs:attribute name="walker" type="WalkerType" use="optional" />
-            <xs:attribute name="resurrect" type="ResurrectType" use="optional" />
-            <xs:attribute name="computer" type="ComputerNameType" use="optional" />
-            <xs:attribute name="popsysobj" type="EmptyType" use="optional" />
+            <xs:attribute name="Walker" type="WalkerType" use="optional" />
+            <xs:attribute name="Resurrect" type="ResurrectType" use="optional" />
+            <xs:attribute name="Computer" type="ComputerNameType" use="optional" />
+            <xs:attribute name="PopSysObj" type="EmptyType" use="optional" />
         </xs:complexType>
     </xs:element>
 

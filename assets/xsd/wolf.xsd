@@ -5,18 +5,18 @@
     <xs:element name="wolf">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="log" type="LogWithSyslogType" minOccurs="0" />
-                <xs:element name="console" type="ConsoleType" minOccurs="0" />
-                <xs:element name="outline" type="OutputType" minOccurs="0" />
-                <xs:element name="outcome" type="OutputType" minOccurs="0" />
-                <xs:element name="upload" type="UploadType" minOccurs="0" />
-                <xs:element name="recipient" type="RecipientType" minOccurs="0" maxOccurs="unbounded" />
-                <xs:element name="archive" type="ArchiveType" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="Log" type="LogWithSyslogType" minOccurs="0" />
+                <xs:element name="Console" type="ConsoleType" minOccurs="0" />
+                <xs:element name="Outline" type="OutputType" minOccurs="0" />
+                <xs:element name="Outcome" type="OutputType" minOccurs="0" />
+                <xs:element name="Upload" type="UploadType" minOccurs="0" />
+                <xs:element name="Recipient" type="RecipientType" minOccurs="0" maxOccurs="unbounded" />
+                <xs:element name="Archive" type="ArchiveType" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
-            <xs:attribute name="childdebug" type="YesNoType" use="optional" />
+            <xs:attribute name="ChildDebug" type="YesNoType" use="optional" />
             <xs:attribute name="command_timeout" type="xs:nonNegativeInteger" use="optional" />
             <xs:attribute name="archive_timeout" type="xs:nonNegativeInteger" use="optional" />
-            <xs:attribute name="werdontshowui" type="YesNoType" use="optional" />
+            <xs:attribute name="WerDontShowUI" type="YesNoType" use="optional" />
         </xs:complexType>
     </xs:element>
 </xs:schema>

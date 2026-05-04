@@ -70,7 +70,6 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <!-- TODO -->
     <xs:simpleType name="PathType">
         <xs:restriction base="xs:string">
             <xs:pattern value=".*" />
@@ -106,18 +105,17 @@
     <!-- Filesystem element -->
     <xs:complexType name="FilesystemType">
         <xs:sequence>
-            <xs:element name="location" type="LocationType" minOccurs="1" maxOccurs="unbounded" />
-            <xs:element name="knownlocations" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="Location" type="LocationType" minOccurs="1" maxOccurs="unbounded" />
+            <xs:element name="Knownlocations" type="xs:string" minOccurs="0" maxOccurs="1" />
             <xs:choice minOccurs="0" maxOccurs="unbounded">
                 <xs:element name="ntfs_find" type="NtfsFindType" />
                 <xs:element name="ntfs_exclude" type="NtfsExcludeType" />
                 <xs:element name="yara" type="YaraType" minOccurs="0" maxOccurs="unbounded" />
             </xs:choice>
         </xs:sequence>
-        <xs:attribute name="resurrect" type="ResurrectType" use="optional" default="no" />
+        <xs:attribute name="Resurrect" type="ResurrectType" use="optional" default="no" />
     </xs:complexType>
 
-    <!-- Filesystem element -->
     <xs:simpleType name="ShadowsType">
         <xs:restriction base="xs:string">
             <xs:pattern
@@ -137,9 +135,9 @@
     <xs:complexType name="LocationType">
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="shadows" type="ShadowsType" use="optional" />
-                <xs:attribute name="altitude" type="AltitudeType" use="optional" />
-                <xs:attribute name="exclude" type="xs:string" use="optional" />
+                <xs:attribute name="Shadows" type="ShadowsType" use="optional" />
+                <xs:attribute name="Altitude" type="AltitudeType" use="optional" />
+                <xs:attribute name="Exclude" type="xs:string" use="optional" />
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
@@ -199,11 +197,6 @@
 
     <!-- NtfsFind element -->
     <xs:complexType name="NtfsFindType" ui:attributes="list">
-        <!-- <xs:annotation>
-            <xs:appinfo>
-                <ui attributes="list"/>
-            </xs:appinfo>
-        </xs:annotation> -->
         <xs:attributeGroup ref="NtfsAttributeGroup" />
         <xs:attribute name="ea" type="xs:string" use="optional" />
         <xs:attribute name="ea_match" type="xs:string" use="optional" />
@@ -218,15 +211,15 @@
     <!-- Registry element -->
     <xs:complexType name="RegistryType">
         <xs:sequence>
-            <xs:element name="location" type="LocationType" minOccurs="1" maxOccurs="unbounded" />
-            <xs:element name="knownlocations" type="xs:string" minOccurs="0" maxOccurs="1" />
-            <xs:element name="hive" type="HiveType" maxOccurs="unbounded" />
+            <xs:element name="Location" type="LocationType" minOccurs="1" maxOccurs="unbounded" />
+            <xs:element name="KnownLocations" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="Hive" type="HiveType" maxOccurs="unbounded" />
         </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="HiveTemplateType">
-        <xs:attribute name="name" type="xs:string" use="required" />
-        <xs:attribute name="location" type="xs:string" use="required" />
+        <xs:attribute name="Name" type="xs:string" use="required" />
+        <xs:attribute name="Location" type="xs:string" use="required" />
     </xs:complexType>
 
     <!-- Hive element -->
@@ -237,7 +230,7 @@
             <xs:element name="ntfs_find" type="NtfsFindType" minOccurs="0" maxOccurs="1" />
             <xs:element name="registry_find" type="RegistryFindType" minOccurs="0" maxOccurs="unbounded" />
         </xs:sequence>
-        <xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="Name" type="xs:string" use="required" />
     </xs:complexType>
 
     <xs:simpleType name="RegistryValueType">
@@ -339,21 +332,21 @@
     <xs:complexType name="OutputType">
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="format" type="FormatType" use="optional" />
-                <xs:attribute name="compression" type="CompressionType" use="optional" />
-                <xs:attribute name="encoding" type="EncodingType" use="optional" />
-                <xs:attribute name="disposition" type="DispositionType" use="optional" />
-                <xs:attribute name="password" type="xs:string" use="optional" />
-                <xs:attribute name="connectionstring" type="xs:string" use="optional" />
-                <xs:attribute name="key" type="xs:string" use="optional" />
-                <xs:attribute name="table" type="xs:string" use="optional" />
+                <xs:attribute name="Format" type="FormatType" use="optional" />
+                <xs:attribute name="Compression" type="CompressionType" use="optional" />
+                <xs:attribute name="Encoding" type="EncodingType" use="optional" />
+                <xs:attribute name="Disposition" type="DispositionType" use="optional" />
+                <xs:attribute name="Password" type="xs:string" use="optional" />
+                <xs:attribute name="ConnectionString" type="xs:string" use="optional" />
+                <xs:attribute name="Key" type="xs:string" use="optional" />
+                <xs:attribute name="Table" type="xs:string" use="optional" />
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
 
     <xs:complexType name="LogFileType">
         <xs:sequence>
-            <xs:element name="output" type="OutputType" minOccurs="1" maxOccurs="1" />
+            <xs:element name="Output" type="OutputType" minOccurs="1" maxOccurs="1" />
         </xs:sequence>
         <xs:attributeGroup ref="LogLevelAttributeGroup" />
     </xs:complexType>
@@ -367,8 +360,8 @@
 
     <xs:complexType name="LogSyslogType">
         <xs:sequence>
-            <xs:element name="host" type="OutputType" minOccurs="1" maxOccurs="1" />
-            <xs:element name="port" type="NetworkPortType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="Host" type="OutputType" minOccurs="1" maxOccurs="1" />
+            <xs:element name="Port" type="NetworkPortType" minOccurs="0" maxOccurs="1" />
         </xs:sequence>
         <xs:attributeGroup ref="LogLevelAttributeGroup" />
     </xs:complexType>
@@ -386,30 +379,30 @@
     </xs:simpleType>
 
     <xs:attributeGroup name="LogLevelAttributeGroup">
-        <xs:attribute name="level" type="LogLevelType" use="optional" />
-        <xs:attribute name="backtrace" type="LogLevelType" use="optional" />
+        <xs:attribute name="Level" type="LogLevelType" use="optional" />
+        <xs:attribute name="Backtrace" type="LogLevelType" use="optional" />
     </xs:attributeGroup>
 
     <xs:complexType name="LogType">
         <xs:sequence>
-            <xs:element name="console" type="LogConsoleType" minOccurs="0" maxOccurs="1" />
-            <xs:element name="file" type="LogFileType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="Console" type="LogConsoleType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="File" type="LogFileType" minOccurs="0" maxOccurs="1" />
         </xs:sequence>
         <xs:attributeGroup ref="LogLevelAttributeGroup" />
     </xs:complexType>
 
     <xs:complexType name="LogWithSyslogType">
         <xs:sequence>
-            <xs:element name="console" type="LogConsoleType" minOccurs="0" maxOccurs="1" />
-            <xs:element name="file" type="LogFileType" minOccurs="0" maxOccurs="1" />
-            <xs:element name="syslog" type="LogSyslogType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="Console" type="LogConsoleType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="File" type="LogFileType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="Syslog" type="LogSyslogType" minOccurs="0" maxOccurs="1" />
         </xs:sequence>
         <xs:attributeGroup ref="LogLevelAttributeGroup" />
     </xs:complexType>
 
     <xs:complexType name="ConsoleType">
         <xs:sequence>
-            <xs:element name="output" type="OutputType" minOccurs="1" maxOccurs="1" />
+            <xs:element name="Output" type="OutputType" minOccurs="1" maxOccurs="1" />
         </xs:sequence>
     </xs:complexType>
 
@@ -469,8 +462,8 @@
     <xs:complexType name="RecipientType">
         <xs:simpleContent>
             <xs:extension base="xs:string">
-              <xs:attribute name="name" type="xs:string" use="required"/>
-              <xs:attribute name="archive" type="xs:string" use="required"/>
+              <xs:attribute name="Name" type="xs:string" use="required"/>
+              <xs:attribute name="Archive" type="xs:string" use="required"/>
             </xs:extension>
           </xs:simpleContent>
     </xs:complexType>
@@ -488,23 +481,23 @@
     </xs:simpleType>
 
     <xs:complexType name="UploadType">
-        <xs:attribute name="job" type="YesNoType" use="optional" />
-        <xs:attribute name="method" type="UploadMethodType" use="required" />
-        <xs:attribute name="server" type="UrlHostType" use="required" />
-        <xs:attribute name="path" use="required">
+        <xs:attribute name="Job" type="YesNoType" use="optional" />
+        <xs:attribute name="Method" type="UploadMethodType" use="required" />
+        <xs:attribute name="Server" type="UrlHostType" use="required" />
+        <xs:attribute name="Path" use="required">
             <xs:simpleType>
                 <xs:restriction base="xs:string">
                     <xs:pattern value="/.*" />
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
-        <xs:attribute name="user" type="xs:string" use="optional" />
-        <xs:attribute name="password" type="xs:string" use="optional" />
-        <xs:attribute name="authscheme" type="AuthSchemeType" use="optional" />
-        <xs:attribute name="operation" type="OperationType" use="optional" />
-        <xs:attribute name="mode" type="ModeType" use="optional" />
-        <xs:attribute name="include" type="xs:string" use="optional" />
-        <xs:attribute name="exclude" type="xs:string" use="optional" />
+        <xs:attribute name="User" type="xs:string" use="optional" />
+        <xs:attribute name="Password" type="xs:string" use="optional" />
+        <xs:attribute name="Authscheme" type="AuthSchemeType" use="optional" />
+        <xs:attribute name="Operation" type="OperationType" use="optional" />
+        <xs:attribute name="Mode" type="ModeType" use="optional" />
+        <xs:attribute name="Include" type="xs:string" use="optional" />
+        <xs:attribute name="Exclude" type="xs:string" use="optional" />
         <xs:attribute name="delete_smb_share" type="TrueFalseType" use="optional" />
     </xs:complexType>
 
@@ -517,11 +510,11 @@
     </xs:simpleType>
 
     <xs:complexType name="ArchiveRestrictionType">
-        <xs:attribute name="jobmemorylimit" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="processmemorylimit" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="elapsedtimelimit" type="xs:nonNegativeInteger" use="optional" />
-        <xs:attribute name="jobcpulimit" type="xs:nonNegativeInteger" use="optional" />
-        <xs:attribute name="processcpulimit" type="xs:nonNegativeInteger" use="optional" />
+        <xs:attribute name="Jobmemorylimit" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="Processmemorylimit" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="Elapsedtimelimit" type="xs:nonNegativeInteger" use="optional" />
+        <xs:attribute name="Jobcpulimit" type="xs:nonNegativeInteger" use="optional" />
+        <xs:attribute name="Processcpulimit" type="xs:nonNegativeInteger" use="optional" />
     </xs:complexType>
 
     <xs:simpleType name="WinVerType">
@@ -556,16 +549,16 @@
     </xs:simpleType>
 
     <xs:complexType name="CommandExecuteType">
-        <xs:attribute name="name" type="xs:string" use="required" />
-        <xs:attribute name="run" type="xs:string" use="optional" />
-        <xs:attribute name="run32" type="xs:string" use="optional" />
-        <xs:attribute name="run64" type="xs:string" use="optional" />
+        <xs:attribute name="Name" type="xs:string" use="required" />
+        <xs:attribute name="Run" type="xs:string" use="optional" />
+        <xs:attribute name="Run32" type="xs:string" use="optional" />
+        <xs:attribute name="Run64" type="xs:string" use="optional" />
     </xs:complexType>
 
     <xs:complexType name="CommandInputType">
-        <xs:attribute name="name" type="xs:string" use="required" />
-        <xs:attribute name="source" type="xs:string" use="required" />
-        <xs:attribute name="argument" type="xs:string" use="optional" />
+        <xs:attribute name="Name" type="xs:string" use="required" />
+        <xs:attribute name="Source" type="xs:string" use="required" />
+        <xs:attribute name="Argument" type="xs:string" use="optional" />
     </xs:complexType>
 
     <xs:simpleType name="CommandOutputSourceType">
@@ -579,52 +572,52 @@
     </xs:simpleType>
 
     <xs:complexType name="CommandOutputType">
-        <xs:attribute name="name" type="xs:string" use="required" />
-        <xs:attribute name="source" type="CommandOutputSourceType" use="required" />
-        <xs:attribute name="argument" type="xs:string" use="optional" />
-        <xs:attribute name="filematch" type="xs:string" use="optional" />
+        <xs:attribute name="Name" type="xs:string" use="required" />
+        <xs:attribute name="Source" type="CommandOutputSourceType" use="required" />
+        <xs:attribute name="Argument" type="xs:string" use="optional" />
+        <xs:attribute name="FileMatch" type="xs:string" use="optional" />
     </xs:complexType>
 
     <xs:complexType name="ArchiveCommandType">
         <xs:sequence>
-            <xs:element name="execute" type="CommandExecuteType" minOccurs="1" />
+            <xs:element name="Execute" type="CommandExecuteType" minOccurs="1" />
             <xs:choice maxOccurs="unbounded">
-                <xs:element name="argument" type="xs:string" />
-                <xs:element name="input" type="CommandInputType" />
-                <xs:element name="output" type="CommandOutputType" />
+                <xs:element name="Argument" type="xs:string" />
+                <xs:element name="Input" type="CommandInputType" />
+                <xs:element name="Output" type="CommandOutputType" />
             </xs:choice>
         </xs:sequence>
-        <xs:attribute name="keyword" type="xs:string" use="required" />
-        <xs:attribute name="timeout" type="xs:positiveInteger" use="optional" />
-        <xs:attribute name="winver" type="WinVerType" use="optional" />
-        <xs:attribute name="queue" type="CommandQueueType" use="optional" />
-        <xs:attribute name="systemtype" type="SystemType" use="optional" />
-        <xs:attribute name="diskfree" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="optional" type="YesNoType" use="optional" />
+        <xs:attribute name="Keyword" type="xs:string" use="required" />
+        <xs:attribute name="Timeout" type="xs:positiveInteger" use="optional" />
+        <xs:attribute name="Winver" type="WinVerType" use="optional" />
+        <xs:attribute name="Queue" type="CommandQueueType" use="optional" />
+        <xs:attribute name="SystemType" type="SystemType" use="optional" />
+        <xs:attribute name="DiskFree" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="Optional" type="YesNoType" use="optional" />
     </xs:complexType>
 
     <xs:complexType name="ArchiveType">
         <xs:sequence>
-            <xs:element name="restrictions" type="ArchiveRestrictionType" minOccurs="0" />
-            <xs:element name="command" type="ArchiveCommandType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="Restrictions" type="ArchiveRestrictionType" minOccurs="0" />
+            <xs:element name="Command" type="ArchiveCommandType" minOccurs="0" maxOccurs="unbounded" />
         </xs:sequence>
-        <xs:attribute name="name" type="xs:string" use="required" />
-        <xs:attribute name="keyword" type="xs:string" use="required" />
-        <xs:attribute name="concurrency" type="xs:positiveInteger" use="required" />
-        <xs:attribute name="optional" type="YesNoType" use="optional" />
-        <xs:attribute name="repeat" type="ArchiveRepeatType" use="required" />
-        <xs:attribute name="compression" type="CompressionType" use="optional" />
+        <xs:attribute name="Name" type="xs:string" use="required" />
+        <xs:attribute name="Keyword" type="xs:string" use="required" />
+        <xs:attribute name="Concurrency" type="xs:positiveInteger" use="required" />
+        <xs:attribute name="Optional" type="YesNoType" use="optional" />
+        <xs:attribute name="Repeat" type="ArchiveRepeatType" use="required" />
+        <xs:attribute name="Compression" type="CompressionType" use="optional" />
         <xs:attribute name="command_timeout" type="xs:nonNegativeInteger" use="optional" />
         <xs:attribute name="archive_timeout" type="xs:nonNegativeInteger" use="optional" />
-        <xs:attribute name="physicalmemory" type="ByteQuantityComparisonType" use="optional" />
-        <xs:attribute name="diskfree" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="childdebug" type="YesNoType" use="optional" />
+        <xs:attribute name="PhysicalMemory" type="ByteQuantityComparisonType" use="optional" />
+        <xs:attribute name="DiskFree" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="ChildDebug" type="YesNoType" use="optional" />
     </xs:complexType>
 
     <xs:attributeGroup name="MaxLimitsGroupType">
-        <xs:attribute name="maxpersamplebytes" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="maxtotalbytes" type="ByteQuantityType" use="optional" />
-        <xs:attribute name="maxsamplecount" type="xs:nonNegativeInteger" use="optional" />
+        <xs:attribute name="MaxPerSamplebytes" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="MaxTotalBytes" type="ByteQuantityType" use="optional" />
+        <xs:attribute name="MaxSampleCount" type="xs:nonNegativeInteger" use="optional" />
     </xs:attributeGroup>
 
     <xs:complexType name="SampleType">
@@ -634,8 +627,8 @@
                 <xs:element name="ntfs_exclude" type="NtfsExcludeType" />
             </xs:choice>
         </xs:sequence>
-        <xs:attribute name="name" type="xs:string" />
-        <xs:attribute name="content" type="SampleContentType" use="optional" />
+        <xs:attribute name="Name" type="xs:string" />
+        <xs:attribute name="Content" type="SampleContentType" use="optional" />
         <xs:attributeGroup ref="MaxLimitsGroupType" />
     </xs:complexType>
 
@@ -652,10 +645,10 @@
                 <xs:element name="ntfs_exclude" type="NtfsExcludeType" />
                 <xs:element name="yara" type="YaraType" minOccurs="0" maxOccurs="unbounded" />
             </xs:choice>
-            <xs:element name="sample" type="SampleType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="Sample" type="SampleType" minOccurs="0" maxOccurs="unbounded" />
         </xs:sequence>
         <xs:attributeGroup ref="MaxLimitsGroupType" />
-        <xs:attribute name="content" type="SampleContentType" use="optional" />
+        <xs:attribute name="Content" type="SampleContentType" use="optional" />
         <xs:attribute name="samplenameformat" type="SampleNameFormatType" use="optional" />
     </xs:complexType>
 </xs:schema>

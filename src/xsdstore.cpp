@@ -8,6 +8,8 @@
 
 #include "xsdstore.h"
 
+#include <algorithm>
+#include <cwchar>
 #include <expected>
 #include <msxml6.h>
 #include <string>
@@ -60,16 +62,53 @@ std::expected<QString, std::error_code> GetRootElementAttributeName(MSXML::IXMLD
     return QString::fromWCharArray(name.bstrVal);
 }
 
-} // namespace
-
-XsdStore::XsdStore()
+void NormalizeXsdNames(MSXML::IXMLDOMDocument3Ptr xml)
 {
-    HRESULT hr = schemaCollection_
-                     .CreateInstance(__uuidof(XMLSchemaCache60), nullptr, CLSCTX_INPROC_SERVER);
-    if (FAILED(hr)) {
-        LOG_WARN("Failed to create schema cache");
+    const std::pair<const wchar_t *, const wchar_t *> queries[] = {
+        {L"//xs:element[@name]", L"name"},
+        {L"//xs:attribute[@name]", L"name"},
+        {L"//xs:element[@ref]", L"ref"},
+        {L"//xs:attribute[@ref]", L"ref"},
+    };
+
+    for (const auto &[xpath, attrName] : queries) {
+        MSXML::IXMLDOMNodeListPtr nodes;
+        HRESULT hr = xml->raw_selectNodes(bstr_t(xpath), &nodes);
+        if (FAILED(hr) || !nodes) {
+            continue;
+        }
+
+        long length = 0;
+        nodes->get_length(&length);
+        for (long i = 0; i < length; ++i) {
+            MSXML::IXMLDOMNodePtr node;
+            nodes->get_item(i, &node);
+            if (!node) {
+                continue;
+            }
+
+            IXMLDOMElementPtr element;
+            hr = node->QueryInterface(IID_IXMLDOMElement, (void **) &element);
+            if (FAILED(hr) || !element) {
+                continue;
+            }
+
+            variant_t value;
+            hr = element->getAttribute(bstr_t(attrName), &value);
+            if (FAILED(hr) || value.vt != VT_BSTR) {
+                continue;
+            }
+
+            std::wstring lower(value.bstrVal);
+            std::transform(lower.begin(), lower.end(), lower.begin(), ::towlower);
+            element->setAttribute(bstr_t(attrName), variant_t(lower.c_str()));
+        }
     }
 }
+
+} // namespace
+
+XsdStore::XsdStore() {}
 
 XsdStore::~XsdStore() {}
 
@@ -77,11 +116,8 @@ XsdStore::~XsdStore() {}
 void XsdStore::Clear()
 {
     xsdMap_.clear();
-    HRESULT hr = schemaCollection_
-                     .CreateInstance(__uuidof(XMLSchemaCache60), nullptr, CLSCTX_INPROC_SERVER);
-    if (FAILED(hr)) {
-        LOG_WARN("Failed to create schema cache");
-    }
+    commonDocument_ = nullptr;
+    schemaCollection_ = nullptr;
 }
 
 void XsdStore::loadFromDirectory(const QString &path)
@@ -91,20 +127,14 @@ void XsdStore::loadFromDirectory(const QString &path)
     QDir directory(path);
     QStringList xsdFiles = directory.entryList(QStringList() << "*.xsd", QDir::Files);
 
-    XmlDom commonDom;
     QString commonXsdFileName = "common.xsd";
+    XmlDom commonDom;
     auto document = commonDom.loadFromFile(directory.filePath(commonXsdFileName));
     if (!document || !commonDom.get().has_value()) {
         LOG_WARN("Failed to parse file (path: {}) [{}]", commonXsdFileName, document.error());
         return;
     }
-
-    if (schemaCollection_) {
-        HRESULT hr = schemaCollection_->add(bstr_t(L""), variant_t(*commonDom.detach()));
-        if (FAILED(hr)) {
-            LOG_WARN("Failed to cache schema (input: common.xsd)");
-        }
-    }
+    commonDocument_ = commonDom.get().value_or(nullptr);
 
     for (const QString &fileName : xsdFiles) {
         if (fileName == commonXsdFileName) {
@@ -117,7 +147,6 @@ void XsdStore::loadFromDirectory(const QString &path)
             LOG_WARN("Failed to parse file (path: {})", fileName, document.error());
             continue;
         }
-
         Insert(fileName.toStdWString(), std::move(dom));
     }
 }
@@ -126,21 +155,15 @@ void XsdStore::loadFromResources()
 {
     Clear();
 
-    XmlDom commonDom;
     auto commonXsd = Resource::GetResourceData(L"RT_RCDATA", L"ISCHEMA_COMMON", 0);
     if (commonXsd) {
+        XmlDom commonDom;
         auto common = commonDom.loadFromBuffer(QString::fromUtf8(*commonXsd));
         if (!common || !commonDom.get().has_value()) {
             LOG_WARN("Failed to parse file (path: common.xsd) [{}]", common.error());
             return;
         }
-
-        if (schemaCollection_) {
-            HRESULT hr = schemaCollection_->add(bstr_t(L""), variant_t(*commonDom.detach()));
-            if (FAILED(hr)) {
-                LOG_WARN("Failed to cache schema (path: common.xsd)");
-            }
-        }
+        commonDocument_ = commonDom.get().value_or(nullptr);
     }
 
     ResourceDirectory resources;
@@ -194,14 +217,56 @@ std::expected<MSXML::IXMLDOMDocument3Ptr, std::string> XsdStore::get(const QStri
     return it->second.get();
 }
 
-MSXML::IXMLDOMSchemaCollection2Ptr XsdStore::getSchemaCache()
+MSXML::IXMLDOMSchemaCollection2Ptr XsdStore::getNormalizedSchema()
 {
+    if (schemaCollection_) {
+        return schemaCollection_;
+    }
+
+    HRESULT hr = schemaCollection_
+                     .CreateInstance(__uuidof(XMLSchemaCache60), nullptr, CLSCTX_INPROC_SERVER);
+    if (FAILED(hr)) {
+        LOG_WARN("Failed to create schema cache");
+        return nullptr;
+    }
+
+    auto addNormalized = [&](MSXML::IXMLDOMDocument3Ptr original) {
+        if (!original) {
+            return;
+        }
+        BSTR rawXml = nullptr;
+        original->get_xml(&rawXml);
+        if (!rawXml) {
+            return;
+        }
+        _bstr_t owned(rawXml, false);
+        XmlDom normalizedDom;
+        auto loaded = normalizedDom.loadFromBuffer(QString::fromWCharArray(owned));
+        if (!loaded) {
+            return;
+        }
+        NormalizeXsdNames(loaded->GetInterfacePtr());
+        if (auto doc = normalizedDom.detach()) {
+            HRESULT addHr = schemaCollection_->add(bstr_t(L""), variant_t(*doc));
+            if (FAILED(addHr)) {
+                LOG_WARN("Failed to add normalized schema to cache");
+            }
+        }
+    };
+
+    addNormalized(commonDocument_);
+    for (auto &[id, dom] : xsdMap_) {
+        if (auto doc = dom.get()) {
+            addNormalized(*doc);
+        }
+    }
+
     return schemaCollection_;
 }
 
-const MSXML::IXMLDOMSchemaCollection2Ptr XsdStore::getSchemaCache() const
+MSXML::IXMLDOMDocument3Ptr XsdStore::getCommonDocument() const
 {
-    return schemaCollection_;
+    return commonDocument_;
 }
 
 void XsdStore::Insert(const std::wstring &inputName, XmlDom &&dom)
@@ -209,13 +274,6 @@ void XsdStore::Insert(const std::wstring &inputName, XmlDom &&dom)
     auto document = dom.get();
     if (!document) {
         return;
-    }
-
-    if (schemaCollection_) {
-        HRESULT hr = schemaCollection_->add(bstr_t(L""), variant_t(*dom.get()));
-        if (FAILED(hr)) {
-            LOG_WARN(L"Failed to cache schema (path: {})", inputName);
-        }
     }
 
     auto identifier = GetRootElementAttributeName(document->GetInterfacePtr());

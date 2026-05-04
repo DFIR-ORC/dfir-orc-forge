@@ -37,23 +37,23 @@
     <xs:element name="getsamples">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="log" type="LogType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="output" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="sampleinfo" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="timeline" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="tempdir" type="OutputType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="knownlocations" type="xs:string" minOccurs="0" maxOccurs="1" />
-                <xs:element name="getthis" type="ExtendedCommandExecuteType" minOccurs="0" />
-                <xs:element name="getthisconfig" type="xs:string" minOccurs="0" />
-                <xs:element name="getthisargs" type="xs:string" minOccurs="0" />
-                <xs:element name="samples">
+                <xs:element name="Log" type="LogType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Output" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="SampleInfo" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Timeline" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="TempDir" type="OutputType" minOccurs="0" maxOccurs="1" />
+                <xs:element name="KnownLocations" type="xs:string" minOccurs="0" maxOccurs="1" />
+                <xs:element name="GetThis" type="ExtendedCommandExecuteType" minOccurs="0" />
+                <xs:element name="GetThisConfig" type="xs:string" minOccurs="0" />
+                <xs:element name="GetThisArgs" type="xs:string" minOccurs="0" />
+                <xs:element name="Samples">
                     <xs:complexType>
                         <xs:attributeGroup ref="MaxLimitsGroupType" />
                     </xs:complexType>
                 </xs:element>
             </xs:sequence>
-            <xs:attribute name="nolimits" type="EmptyType" use="optional" />
-            <xs:attribute name="nosigcheck" type="EmptyType" use="optional" />
+            <xs:attribute name="NoLimits" type="EmptyType" use="optional" />
+            <xs:attribute name="NoSigCheck" type="EmptyType" use="optional" />
         </xs:complexType>
     </xs:element>
 
