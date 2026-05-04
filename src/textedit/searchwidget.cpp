@@ -19,7 +19,6 @@
 #include <QLineEdit>
 #include <QPalette>
 #include <QPushButton>
-#include <QScrollbar>
 #include <QTextCharFormat>
 #include <QTextCursor>
 #include <QTextEdit>
@@ -219,21 +218,22 @@ void SearchWidget::findAllMatches(const QString &searchText)
 
 void SearchWidget::highlightMatches()
 {
-    clearHighlights();
-
-    if (m_matches.empty())
-        return;
-
-    auto cursor = m_textEdit->textCursor();
+    QList<QTextEdit::ExtraSelection> selections;
 
     QTextCharFormat highlightFormat;
     highlightFormat.setBackground(QColor(255, 255, 0, 120));
 
+    auto cursor = m_textEdit->textCursor();
     for (const auto &match : m_matches) {
+        QTextEdit::ExtraSelection sel;
+        sel.format = highlightFormat;
         cursor.setPosition(match.position);
         cursor.setPosition(match.position + match.length, QTextCursor::KeepAnchor);
-        cursor.mergeCharFormat(highlightFormat);
+        sel.cursor = cursor;
+        selections.append(sel);
     }
+
+    m_textEdit->setExtraSelections(selections);
 }
 
 void SearchWidget::highlightCurrentMatch()
@@ -244,14 +244,29 @@ void SearchWidget::highlightCurrentMatch()
 
     const auto &match = m_matches[m_currentMatchIndex];
 
-    auto cursor = m_textEdit->textCursor();
-    cursor.setPosition(match.position);
-    cursor.setPosition(match.position + match.length, QTextCursor::KeepAnchor);
+    // Rebuild extra selections: all matches in yellow, current match in orange
+    QList<QTextEdit::ExtraSelection> selections;
+
+    QTextCharFormat allFormat;
+    allFormat.setBackground(QColor(255, 255, 0, 120));
 
     QTextCharFormat currentFormat;
     currentFormat.setBackground(QColor(255, 140, 0, 180));
-    cursor.mergeCharFormat(currentFormat);
 
+    auto cursor = m_textEdit->textCursor();
+    for (int i = 0; i < static_cast<int>(m_matches.size()); ++i) {
+        QTextEdit::ExtraSelection sel;
+        sel.format = (i == m_currentMatchIndex) ? currentFormat : allFormat;
+        cursor.setPosition(m_matches[i].position);
+        cursor.setPosition(m_matches[i].position + m_matches[i].length, QTextCursor::KeepAnchor);
+        sel.cursor = cursor;
+        selections.append(sel);
+    }
+
+    m_textEdit->setExtraSelections(selections);
+
+    cursor.setPosition(match.position);
+    cursor.setPosition(match.position + match.length, QTextCursor::KeepAnchor);
     m_textEdit->setTextCursor(cursor);
     m_textEdit->ensureCursorVisible();
 }
@@ -261,26 +276,7 @@ void SearchWidget::clearHighlights()
     if (!m_textEdit)
         return;
 
-    auto originalCursor = m_textEdit->textCursor();
-    auto originalPosition = originalCursor.position();
-    auto originalScrollPosition = m_textEdit->verticalScrollBar()->value();
-
-    auto cursor = m_textEdit->textCursor();
-    cursor.select(QTextCursor::Document);
-
-    auto background
-        = m_textEdit->palette().color(QPalette::ColorGroup::Normal, QPalette::ColorRole::Window);
-
-    QTextCharFormat clearFormat;
-    clearFormat.setBackground(background);
-    cursor.mergeCharFormat(clearFormat);
-
-    cursor.clearSelection();
-    m_textEdit->setTextCursor(cursor);
-
-    cursor.setPosition(originalPosition);
-    m_textEdit->setTextCursor(cursor);
-    m_textEdit->verticalScrollBar()->setValue(originalScrollPosition);
+    m_textEdit->setExtraSelections({});
 }
 
 void SearchWidget::updateMatchInfo()
