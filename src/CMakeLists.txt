@@ -75,10 +75,22 @@ set(SOURCE_FILES
     textedit/statuslabel.cpp
     textedit/texteditwidget.h
     textedit/texteditwidget.cpp
+    toolembed/embedconfiguration.h
+    toolembed/embedconfiguration.cpp
+    toolembed/embedfiles.h
+    toolembed/embedfiles.cpp
+    toolembed/processoutputview.h
+    toolembed/processoutputview.cpp
+    toolembed/toolembedsetupview.h
+    toolembed/toolembedsetupview.cpp
+    toolembed/toolembedview.h
+    toolembed/toolembedview.cpp
     utils/guard.h
     utils/hresult.h
     utils/hresult.cpp
     utils/log.h
+    utils/peinfo.h
+    utils/peinfo.cpp
     utils/qtfileerror.h
     utils/win32.h
     utils/win32.cpp
@@ -122,12 +134,28 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     msxml6.lib
     shell32.lib
     shlwapi.lib
+    version.lib
+    winhttp.lib
     7zip::7zip
     7zip::extras
     unofficial::libyara::libyara
 )
 
-if (ENABLE_DOCUMENTATION)
+include(${DOF_ROOT}/cmake/DownloadFile.cmake)
+
+# Report a resolved asset as '-- <label> [CACHED]: <value>', the '[CACHED]' tag
+# telling that nothing was downloaded or cloned again.
+function(message_asset label cached value)
+    set(_tag "")
+    if (cached)
+        set(_tag " [CACHED]")
+    endif()
+    message(STATUS "${label}${_tag}: ${value}")
+endfunction()
+
+set(DFIRORC_REPO_URL "https://github.com/DFIR-ORC/dfir-orc")
+
+if (DFIRORC_DOCUMENTATION)
     set(DFIRORC_DOC "${CMAKE_BINARY_DIR}/dfir-orc.github.io.zip")
 
     add_custom_command(
@@ -138,9 +166,99 @@ if (ENABLE_DOCUMENTATION)
         COMMAND ${CMAKE_COMMAND} -E echo "Embedding DFIR-ORC documentation ${DFIRORC_DOC}"
         COMMAND ${RCEDIT_EXECUTABLE}
             set --type "RT_RCDATA"
-                --name "DOC"
+                --name "DFIRORC_DOC"
                 --value-path ${DFIRORC_DOC}
                 $<TARGET_FILE:${PROJECT_NAME}>
         VERBATIM
+    )
+
+    if (DFIRORC_DOC_COMMIT)
+        add_custom_command(
+            TARGET ${PROJECT_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo
+                "Embedding DFIR-ORC documentation commit ${DFIRORC_DOC_COMMIT}"
+            COMMAND ${RCEDIT_EXECUTABLE}
+                set --type "RT_RCDATA"
+                    --name "DFIRORC_DOC_COMMIT"
+                    --value "${DFIRORC_DOC_COMMIT}"
+                    $<TARGET_FILE:${PROJECT_NAME}>
+            VERBATIM
+        )
+    endif()
+endif()
+
+if (DFIRORC_CONFIGURATION)
+    set(DFIRORC_CONFIG "${CMAKE_BINARY_DIR}/dfir-orc-config.zip")
+
+    file(GLOB_RECURSE CONFIG_FILES
+        RELATIVE "${DOF_ROOT}/external/dfir-orc-config"
+        "${DOF_ROOT}/external/dfir-orc-config/*"
+    )
+
+    list(FILTER CONFIG_FILES EXCLUDE REGEX "^\\.git.*")
+
+    add_custom_command(
+        TARGET ${PROJECT_NAME}
+        POST_BUILD
+        WORKING_DIRECTORY "${DOF_ROOT}/external/dfir-orc-config"
+        COMMAND ${CMAKE_COMMAND} -E tar cf ${DFIRORC_CONFIG} --format=zip -- ${CONFIG_FILES}
+        COMMAND ${CMAKE_COMMAND} -E echo "Embedding DFIR-ORC configuration ${DFIRORC_CONFIG}"
+        COMMAND ${RCEDIT_EXECUTABLE}
+            set --type "RT_RCDATA"
+                --name "DFIRORC_CONFIG"
+                --value-path ${DFIRORC_CONFIG}
+                $<TARGET_FILE:${PROJECT_NAME}>
+        VERBATIM
+    )
+
+    if (DFIRORC_CONFIG_COMMIT)
+        add_custom_command(
+            TARGET ${PROJECT_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo
+                "Embedding DFIR-ORC configuration commit ${DFIRORC_CONFIG_COMMIT}"
+            COMMAND ${RCEDIT_EXECUTABLE}
+                set --type "RT_RCDATA"
+                    --name "DFIRORC_CONFIG_COMMIT"
+                    --value "${DFIRORC_CONFIG_COMMIT}"
+                    $<TARGET_FILE:${PROJECT_NAME}>
+            VERBATIM
+        )
+    endif()
+endif()
+
+if (DFIRORC_EXECUTABLE)
+    download_asset(
+        SPEC "${DFIRORC_EXECUTABLE}"
+        REPO_URL "${DFIRORC_REPO_URL}"
+        ASSET_REGEX "DFIR-ORC\\.exe"
+        OUTPUT DFIRORC_EXECUTABLE
+        OUTPUT_VERSION DFIRORC_RELEASE_VERSION
+        OUTPUT_CACHED DFIRORC_EXECUTABLE_CACHED)
+
+    if (NOT EXISTS "${DFIRORC_EXECUTABLE}")
+        message(FATAL_ERROR "DFIRORC_EXECUTABLE does not exist: ${DFIRORC_EXECUTABLE}")
+    endif()
+
+    message_asset("DFIR-ORC executable" "${DFIRORC_EXECUTABLE_CACHED}" "${DFIRORC_EXECUTABLE}")
+
+    add_custom_command(
+        TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "Embedding DFIR-ORC executable ${DFIRORC_EXECUTABLE}"
+        COMMAND ${RCEDIT_EXECUTABLE}
+            set --type "RT_RCDATA"
+                --name "DFIRORC_EXE"
+                --value-path "${DFIRORC_EXECUTABLE}"
+                $<TARGET_FILE:${PROJECT_NAME}>
+        VERBATIM
+    )
+else()
+    message(STATUS
+        "DFIRORC_EXECUTABLE is not set. "
+        "A DFIR-ORC executable can be embedded into dfir-orc-forge so that "
+        "\"File > New DFIR-ORC\" automatically uses it as the pre-loaded resource. "
+        "Set -DDFIRORC_EXECUTABLE=<path|url> to enable this feature."
     )
 endif()

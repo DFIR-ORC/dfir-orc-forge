@@ -348,7 +348,7 @@ foreach(CONFIGURATION_TYPE ${CMAKE_CONFIGURATION_TYPES})
         # effects
         # errormessage
         # filedialog
-        filesystemiterator
+        #filesystemiterator
         #+filesystemmodel
         filesystemwatcher
         fontcombobox
@@ -416,7 +416,7 @@ foreach(CONFIGURATION_TYPE ${CMAKE_CONFIGURATION_TYPES})
         printpreviewdialog
         printpreviewwidget
         printsupport
-        process
+        # process
         # processenvironment
         progressbar
         progressdialog

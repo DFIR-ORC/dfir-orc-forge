@@ -2,8 +2,32 @@ cmake_minimum_required(VERSION 3.29)
 
 option(ENABLE_STATIC_RUNTIME "Enable static runtime build" ON)
 option(ENABLE_STATIC_QT "Enable static link for Qt" ON)
-option(ENABLE_DOCUMENTATION "Embed DFIR-ORC documentation" ON)
 option(BUILD_QT_BASE "Build Qt from minimal sources" OFF)
+
+# DFIRORC_EXECUTABLE accepts:
+#   LATEST                       release asset of https://github.com/DFIR-ORC/dfir-orc
+#   <version>                    a release tag (e.g. v10.3.4) of the default
+#                                repository above
+#   <repo-url>[,<version>]       release asset of a GitHub or GitLab repository,
+#                                latest release unless a tag is appended with
+#                                ',' or ';' (e.g. ...,v10.3.4); ssh remotes
+#                                (git@github.com:DFIR-ORC/dfir-orc) identify
+#                                the repository too, assets stay over https
+#   <url>                        direct URL of the file (may name an archive
+#                                member: .../DFIR-ORC-binaries.zip/OrcCapsule.exe)
+#   <path>                       local file
+
+# Optional: DFIR-ORC executable to embed as RT_RCDATA/"DFIR-ORC"
+# Examples:
+#   -DDFIRORC_EXECUTABLE=LATEST
+#   -DDFIRORC_EXECUTABLE=v10.3.4
+#   -DDFIRORC_EXECUTABLE=https://github.com/fork/dfir-orc,v10.3.4
+#   -DDFIRORC_EXECUTABLE=https://github.com/DFIR-ORC/dfir-orc/releases/download/v10.3.0/DFIR-ORC.exe
+#   -DDFIRORC_EXECUTABLE=C:/path/to/DFIR-ORC.exe
+set(DFIRORC_EXECUTABLE "" CACHE STRING "DFIR-ORC executable to embed into dfir-orc-forge: OFF, LATEST, <repo-url>[,<version>], <url> or <path>")
+
+option(DFIRORC_CONFIGURATION "Embed DFIR-ORC configuration" ON)
+option(DFIRORC_DOCUMENTATION "Embed DFIR-ORC documentation" ON)
 
 set(DOF_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -25,6 +49,16 @@ git_info(
     VERSION_FROM_SEMVER_TAG DOF_VERSION
     BRANCH DOF_BRANCH
     COMMIT DOF_COMMIT
+)
+
+# Submodule commit hashes (empty string when not present)
+git_info(
+    REPO_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/dfir-orc-config
+    COMMIT DFIRORC_CONFIG_COMMIT
+)
+git_info(
+    REPO_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/dfir-orc.github.io
+    COMMIT DFIRORC_DOC_COMMIT
 )
 
 project(dfir-orc-forge)

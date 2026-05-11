@@ -37,6 +37,7 @@ public slots:
 private:
     void closeEvent(QCloseEvent *event) override;
     void setupUI();
+    void reportHelpFailure();
     bool hasModifiedStatus() const;
     void setModifiedStatus(bool value);
 
@@ -57,6 +58,7 @@ private:
     QAction *actionViewOnlineHelp_;
     QAction *actionAbout_;
     QAction *actionReloadXsd_;
+    QAction *actionNewOrc_;
     QAction *actionNewXmlFastFind_;
     QAction *actionNewXmlFatInfo_;
     QAction *actionNewXmlGetSamples_;

@@ -8,20 +8,31 @@
 
 #include "mainwindow.h"
 
+#include <algorithm>
+#include <array>
 #include <format>
+#include <optional>
 #include <string>
 #include <system_error>
+#include <vector>
 
+#include <windows.h>
+#include <shellapi.h>
+#include <QApplication>
 #include <QByteArray>
 #include <QCloseEvent>
+#include <QCoreApplication>
 #include <QDesktopServices>
 #include <QFileDialog>
+#include <QFileInfo>
+#include <QFormLayout>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QLayout>
 #include <QMessageBox>
 #include <QScrollArea>
 #include <QStandardPaths>
-#include <QTemporaryFile>
+#include <QTextEdit>
 #include <QUrl>
 
 #include "mainwindow.moc"
@@ -30,9 +41,12 @@
 #include "editor/resourceeditor.h"
 #include "formatter/formatter.h"
 #include "resource/resource.h"
-#include "resource/resourcedirectory.h"
+#include "textedit/texteditwidget.h"
+#include "toolembed/toolembedview.h"
 #include "utils/log.h"
+#include "utils/peinfo.h"
 
+#include "toolembed/embedconfiguration.h"
 #include "xsdstore.h"
 
 #include "7z/extract.h"
@@ -82,6 +96,27 @@ QString GetNewXmlConfiguration(std::string_view command)
     return QString::fromUtf8(*data);
 }
 
+// The documentation is optional: it is embedded post-build as a zip archive
+// whose entries live under 'docs/'. Return its data only when the resource is
+// present and actually looks like a zip archive.
+std::optional<std::vector<uint8_t>> GetEmbeddedDocumentation()
+{
+    auto data = Resource::GetResourceData(L"RT_RCDATA", L"DFIRORC_DOC", 0);
+    if (!data) {
+        return {};
+    }
+
+    constexpr std::array<uint8_t, 4> kZipLocalFileHeader = {'P', 'K', 0x03, 0x04};
+    if (data->size() < kZipLocalFileHeader.size()
+        || !std::equal(
+            std::cbegin(kZipLocalFileHeader), std::cend(kZipLocalFileHeader), std::cbegin(*data))) {
+        LOG_WARN("Embedded documentation is not a zip archive, ignoring it");
+        return {};
+    }
+
+    return std::move(*data);
+}
+
 QString GetNewYaraRule()
 {
     auto data = Resource::GetResourceData(L"RT_RCDATA", L"CONFIGURATION_NEW_YARA_RULE", 0);
@@ -124,12 +159,26 @@ MainWindow::MainWindow(QWidget *parent)
         newFile(GetNewYaraRule(), EditorFormat::YaraRule);
     });
 
+    connect(actionNewOrc_, &QAction::triggered, [this]() {
+        setCentralWidget(nullptr);
+        path_.reset();
+        setModifiedStatus(false);
+
+        auto *embedView = new ToolEmbedView(this);
+        connect(embedView, &ToolEmbedView::fileReady, this, &MainWindow::loadFile);
+        setCentralWidget(embedView);
+        embedView->promptAndRun();
+    });
+
     connect(actionOpen_, &QAction::triggered, this, &MainWindow::openFileDialog);
     connect(actionSave_, &QAction::triggered, this, &MainWindow::saveFile);
     connect(actionSaveAs_, &QAction::triggered, this, &MainWindow::saveFileAs);
     connect(actionExit_, &QAction::triggered, this, &MainWindow::close);
 
-    connect(actionViewHelp_, &QAction::triggered, this, &MainWindow::help);
+    if (actionViewHelp_) {
+        connect(actionViewHelp_, &QAction::triggered, this, &MainWindow::help);
+    }
+
     connect(actionViewOnlineHelp_, &QAction::triggered, []() {
         QDesktopServices::openUrl(QUrl("https://dfir-orc.github.io"));
     });
@@ -173,6 +222,9 @@ void MainWindow::setupUI()
 
     actionReloadXsd_ = new QAction("Reload XSD", this);
 
+    actionNewOrc_ = new QAction("New DFIR-ORC", this);
+    actionNewOrc_->setShortcut(QKeySequence::New);
+
     actionNewXmlFastFind_ = new QAction("FastFind", this);
     actionNewXmlFatInfo_ = new QAction("FatInfo", this);
     actionNewXmlGetSamples_ = new QAction("GetSamples", this);
@@ -207,6 +259,7 @@ void MainWindow::setupUI()
          actionNewXmlWolf_});
 
     fileMenu_ = new QMenu("File", this);
+    fileMenu_->addAction(actionNewOrc_);
     fileMenu_->addMenu(xmlConfigurationMenu_);
     fileMenu_->addActions(
         {actionNewYaraRule_, actionOpen_, actionSave_, actionSaveAs_, actionExit_, actionReloadXsd_});
@@ -222,7 +275,11 @@ void MainWindow::setupUI()
         = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::InsertLink), "View Online Help", this);
     actionAbout_ = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::HelpAbout), "About", this);
 
-    QList<QAction *> helpActions = {actionViewHelp_, actionViewOnlineHelp_, actionAbout_};
+    QList<QAction *> helpActions;
+    if (actionViewHelp_) {
+        helpActions.append(actionViewHelp_);
+    }
+    helpActions.append({actionViewOnlineHelp_, actionAbout_});
     for (auto *action : helpActions) {
         action->setShortcutVisibleInContextMenu(true);
         action->setIconVisibleInMenu(false);
@@ -408,9 +465,10 @@ void MainWindow::help()
         return;
     }
 
-    ResourceDirectory resources;
-    auto buffer = Resource::GetResourceData(std::wstring(L"RT_RCDATA"), std::wstring(L"DOC"), 0);
+    auto buffer = GetEmbeddedDocumentation();
     if (!buffer) {
+        LOG_CRITICAL("No usable documentation is embedded in this build");
+        reportHelpFailure();
         return;
     }
 
@@ -419,44 +477,195 @@ void MainWindow::help()
         tempDir.absolutePath().toStdWString());
     if (!rv) {
         LOG_CRITICAL("Failed to extract help files: {}", rv.error().message());
+        reportHelpFailure();
         return;
     }
 
-    QDir helpDir(tempDirPath + "\\docs");
-    if (!QDesktopServices::openUrl(QUrl(helpDir.absolutePath() + "/index.html"))) {
-        LOG_CRITICAL("Failed to open help index: {}", rv.error().message());
+    const QString indexPath = QDir(tempDir.filePath("docs")).absoluteFilePath("index.html");
+    if (!QFileInfo::exists(indexPath)) {
+        LOG_CRITICAL(L"Missing help index: {}", indexPath.toStdWString());
+        reportHelpFailure();
         return;
     }
+
+    if (!QDesktopServices::openUrl(QUrl::fromLocalFile(indexPath))) {
+        LOG_CRITICAL(L"Failed to open help index: {}", indexPath.toStdWString());
+        reportHelpFailure();
+        return;
+    }
+}
+
+void MainWindow::reportHelpFailure()
+{
+    QMessageBox::warning(
+        this,
+        tr("Help"),
+        tr("The local documentation could not be opened. Use 'View Online Help' instead."));
 }
 
 void MainWindow::about()
 {
     QDialog aboutDialog(this);
     aboutDialog.setWindowTitle(tr("About"));
-    QVBoxLayout layout(&aboutDialog);
-    QLabel logoLabel(&aboutDialog);
+    auto *mainLayout = new QVBoxLayout(&aboutDialog);
 
-    QPixmap logo;
-    auto res = Resource::GetResourceData(L"RT_RCDATA", L"LOGO", 0);
-    if (res) {
-        if (logo.loadFromData(res->data(), res->size(), "PNG")) {
-            logoLabel.setPixmap(logo.scaled(100, 100, Qt::KeepAspectRatio));
-            layout.addWidget(&logoLabel, 0, Qt::AlignCenter);
+    // --- Upper section: logo + version ---
+    {
+        QPixmap logo;
+        auto res = Resource::GetResourceData(L"RT_RCDATA", L"LOGO", 0);
+        if (res && logo.loadFromData(res->data(), res->size(), "PNG")) {
+            auto *logoLabel = new QLabel(&aboutDialog);
+            logoLabel->setPixmap(logo.scaled(100, 100, Qt::KeepAspectRatio));
+            mainLayout->addWidget(logoLabel, 0, Qt::AlignCenter);
         }
+
+        auto *textLabel = new QLabel(&aboutDialog);
+        textLabel->setText(QString("<h2>DFIR-ORC Forge</h2>"
+                                   "<p>Version %1</p>"
+                                   "<p>Configuration editor for DFIR-ORC</p>"
+                                   "<p>Copyright &copy; 2025 ANSSI</p>")
+                               .arg(kDofVersionString));
+        textLabel->setWordWrap(true);
+        mainLayout->addWidget(textLabel, 0, Qt::AlignCenter);
     }
 
-    auto text = QString("<h2>DFIR-ORC Forge</h2>"
-                        "<p>Version %1</p>"
-                        "<p>Configuration editor for DFIR-ORC</p>"
-                        "<p>Copyright &copy; 2025 ANSSI</p>")
-                    .arg(kDofVersionString);
+    mainLayout->addSpacing(12);
 
-    QLabel textLabel(&aboutDialog);
-    textLabel.setText(text);
-    textLabel.setWordWrap(true);
-    layout.addWidget(&textLabel, 0, Qt::AlignCenter);
+    // Separator
+    {
+        auto *sep = new QFrame(&aboutDialog);
+        sep->setFrameShape(QFrame::HLine);
+        sep->setFrameShadow(QFrame::Sunken);
+        mainLayout->addWidget(sep);
+    }
 
-    aboutDialog.setLayout(&layout);
+    mainLayout->addSpacing(10);
+
+    // --- Lower section: embedded resources ---
+    {
+        auto *embedTitle = new QLabel(tr("<b>Embedded resources</b>"), &aboutDialog);
+        mainLayout->addWidget(embedTitle);
+        mainLayout->addSpacing(8);
+
+        // Collect exe info (icon + text) before building widgets
+        QPixmap exeIcon;
+        QString exeText;
+        QString configCommit;
+        QString docCommit;
+
+        // DFIRORC_EXE: write to a fixed-name .exe temp path so the extension is
+        // guaranteed, then use ExtractIconExW (reads PE resources directly, no
+        // Shell COM needed) for the icon and GetFileVersionInfo for product info.
+        {
+            auto embeddedExe = Resource::GetResourceData(L"RT_RCDATA", L"DFIRORC_EXE", 0);
+            if (embeddedExe) {
+                const QString tmpPath = QDir::tempPath() + "/dfir-orc-forge-about.exe";
+
+                QFile tmpFile(tmpPath);
+                const bool written = tmpFile.open(QIODevice::WriteOnly | QIODevice::Truncate)
+                                     && tmpFile.write(
+                                            reinterpret_cast<const char *>(embeddedExe->data()),
+                                            static_cast<qint64>(embeddedExe->size()))
+                                            == static_cast<qint64>(embeddedExe->size());
+                tmpFile.close();
+
+                if (written) {
+                    // Icon: extract directly from PE resource group, no Shell needed
+                    HICON hLarge = nullptr;
+                    if (ExtractIconExW(tmpPath.toStdWString().c_str(), 0, &hLarge, nullptr, 1) == 1
+                        && hLarge) {
+                        exeIcon = QPixmap::fromImage(QImage::fromHICON(hLarge));
+                        DestroyIcon(hLarge);
+                    }
+
+                    // Version info
+                    auto [name, ver, unused] = peProductInfo(tmpPath);
+                    QFile::remove(tmpPath);
+
+                    if (!name.isEmpty() && !ver.isEmpty())
+                        exeText = tr("%1 %2").arg(name, ver);
+                    else if (!name.isEmpty())
+                        exeText = name;
+                    else
+                        exeText = ver;
+                } else {
+                    QFile::remove(tmpPath);
+                }
+
+                if (exeText.isEmpty())
+                    exeText = tr("(no version info)");
+            } else {
+                exeText = tr("Not embedded");
+            }
+        }
+
+        // DFIRORC_CONFIG_COMMIT
+        {
+            auto res = Resource::GetResourceData(L"RT_RCDATA", L"DFIRORC_CONFIG_COMMIT", 0);
+            configCommit = res ? QString::fromUtf8(
+                                     reinterpret_cast<const char *>(res->data()),
+                                     static_cast<int>(res->size()))
+                                     .trimmed()
+                               : tr("Not embedded");
+        }
+
+        // DFIRORC_DOC_COMMIT
+        {
+            auto res = Resource::GetResourceData(L"RT_RCDATA", L"DFIRORC_DOC_COMMIT", 0);
+            docCommit = res ? QString::fromUtf8(
+                                  reinterpret_cast<const char *>(res->data()),
+                                  static_cast<int>(res->size()))
+                                  .trimmed()
+                            : tr("Not embedded");
+        }
+
+        // Layout: [icon] | grid of 3 label/value rows
+        // The icon is left-aligned and spans the full height of the grid.
+        auto *hLayout = new QHBoxLayout;
+        hLayout->setContentsMargins(0, 0, 0, 0);
+        hLayout->setSpacing(12);
+
+        // Icon column -- vertically centered across the three rows.
+        // Scale the pixmap to at most 24x24 so it is never clipped, then let
+        // the label size itself to the scaled pixmap (no fixed dimensions).
+        auto *iconLabel = new QLabel(&aboutDialog);
+        iconLabel->setAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
+        if (!exeIcon.isNull()) {
+            iconLabel->setPixmap(
+                exeIcon.scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        } else {
+            // Reserve the same width even when there is no icon so the grid
+            // columns don't shift depending on whether an exe is embedded.
+            iconLabel->setFixedWidth(48);
+        }
+        hLayout->addWidget(iconLabel, 0, Qt::AlignVCenter);
+
+        // Label/value grid
+        auto *grid = new QGridLayout;
+        grid->setHorizontalSpacing(12);
+        grid->setVerticalSpacing(6);
+        grid->setColumnStretch(1, 1);
+
+        auto addGridRow = [&](int row, const QString &label, const QString &value) {
+            auto *lbl = new QLabel(label, &aboutDialog);
+            lbl->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+            auto *val = new QLabel(value, &aboutDialog);
+            val->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+            val->setWordWrap(true);
+            grid->addWidget(lbl, row, 0);
+            grid->addWidget(val, row, 1);
+        };
+
+        addGridRow(0, tr("DFIR-ORC exe:"), exeText);
+        addGridRow(1, tr("DFIR-ORC config:"), configCommit);
+        addGridRow(2, tr("DFIR-ORC doc:"), docCommit);
+
+        hLayout->addLayout(grid, 1);
+        mainLayout->addLayout(hLayout);
+    }
+
+    mainLayout->addSpacing(8);
+    aboutDialog.setMinimumWidth(480);
     aboutDialog.exec();
 }
 
