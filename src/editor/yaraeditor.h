@@ -41,6 +41,7 @@ public slots:
 
 private:
     void setupUI();
+    void toggleLineComment();
     bool saveToFile(QString path);
 
 private:

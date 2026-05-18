@@ -229,6 +229,11 @@ XmlConfigEditor::XmlConfigEditor(XsdStore &xsdStore, QWidget *parent)
         &XmlConfigEditor::configIdentifierChanged,
         completer_,
         &XmlCompleter::setConfigIdentifier);
+
+    auto *commentAction = new QAction(this);
+    commentAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Slash));
+    connect(commentAction, &QAction::triggered, this, &XmlConfigEditor::toggleLineComment);
+    addAction(commentAction);
 }
 
 XmlConfigEditor::~XmlConfigEditor() {}
@@ -402,4 +407,56 @@ void XmlConfigEditor::validate()
     } else {
         status_->setText("Validated with schema", StatusType::Success);
     }
+}
+
+void XmlConfigEditor::toggleLineComment()
+{
+    auto cursor = editor_->textCursor();
+
+    // Work on the current line if there is no selection
+    if (!cursor.hasSelection()) {
+        cursor.movePosition(QTextCursor::StartOfBlock);
+        cursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+    }
+
+    int start = cursor.selectionStart();
+    int end = cursor.selectionEnd();
+
+    // Select full lines: move selection start to the beginning of its block
+    // and selection end to the end of its block
+    QTextCursor selCursor(editor_->document());
+    selCursor.setPosition(start);
+    selCursor.movePosition(QTextCursor::StartOfBlock);
+    int blockStart = selCursor.position();
+
+    selCursor.setPosition(end);
+    if (selCursor.atBlockStart() && end > start)
+        selCursor.movePosition(QTextCursor::PreviousBlock);
+    selCursor.movePosition(QTextCursor::EndOfBlock);
+    int blockEnd = selCursor.position();
+
+    // Extract the selected text
+    QTextCursor rangeCursor(editor_->document());
+    rangeCursor.setPosition(blockStart);
+    rangeCursor.setPosition(blockEnd, QTextCursor::KeepAnchor);
+    QString selectedText = rangeCursor.selectedText();
+    // QTextCursor uses U+2029 (paragraph separator) instead of '\n'
+    selectedText.replace(QChar(0x2029), QChar('\n'));
+
+    cursor.beginEditBlock();
+
+    rangeCursor.setPosition(blockStart);
+    rangeCursor.setPosition(blockEnd, QTextCursor::KeepAnchor);
+
+    if (selectedText.startsWith(QStringLiteral("<!--"))
+        && selectedText.endsWith(QStringLiteral("-->"))) {
+        // Uncomment: remove leading <!-- and trailing -->
+        QString uncommented = selectedText.mid(4, selectedText.length() - 7);
+        rangeCursor.insertText(uncommented);
+    } else {
+        // Comment: wrap the whole selection in <!-- ... -->
+        rangeCursor.insertText(QStringLiteral("<!--") + selectedText + QStringLiteral("-->"));
+    }
+
+    cursor.endEditBlock();
 }

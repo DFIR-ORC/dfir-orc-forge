@@ -44,6 +44,7 @@ public slots:
     void validate();
 
 private:
+    void toggleLineComment();
     bool saveToFile(QString path);
 
 private:

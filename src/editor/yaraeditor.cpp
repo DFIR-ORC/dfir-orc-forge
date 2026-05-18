@@ -215,6 +215,11 @@ YaraEditor::YaraEditor(QWidget *parent)
     }
 
     new YaraHighlighter(editor_->document());
+
+    auto *commentAction = new QAction(this);
+    commentAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Slash));
+    connect(commentAction, &QAction::triggered, this, &YaraEditor::toggleLineComment);
+    addAction(commentAction);
 }
 
 YaraEditor::~YaraEditor() {}
@@ -361,4 +366,49 @@ void YaraEditor::validate()
     }
 
     status_->setText("Yara rule compiled successfully", StatusType::Success);
+}
+
+void YaraEditor::toggleLineComment()
+{
+    auto cursor = editor_->textCursor();
+    cursor.beginEditBlock();
+
+    int start = cursor.selectionStart();
+    int end = cursor.selectionEnd();
+
+    QTextCursor startCursor(editor_->document());
+    startCursor.setPosition(start);
+    QTextCursor endCursor(editor_->document());
+    endCursor.setPosition(end);
+
+    int startBlock = startCursor.blockNumber();
+    int endBlock = endCursor.blockNumber();
+    // If selection ends exactly at block start, don't include that block
+    if (end > start && endCursor.atBlockStart())
+        --endBlock;
+
+    // Determine whether all selected lines are commented
+    bool allCommented = true;
+    QTextBlock block = editor_->document()->findBlockByNumber(startBlock);
+    for (int i = startBlock; i <= endBlock; ++i, block = block.next()) {
+        if (!block.text().startsWith(QStringLiteral("//"))) {
+            allCommented = false;
+            break;
+        }
+    }
+
+    block = editor_->document()->findBlockByNumber(startBlock);
+    for (int i = startBlock; i <= endBlock; ++i, block = block.next()) {
+        QTextCursor c(block);
+        if (allCommented) {
+            c.movePosition(QTextCursor::StartOfBlock);
+            c.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
+            c.removeSelectedText();
+        } else {
+            c.movePosition(QTextCursor::StartOfBlock);
+            c.insertText(QStringLiteral("//"));
+        }
+    }
+
+    cursor.endEditBlock();
 }
