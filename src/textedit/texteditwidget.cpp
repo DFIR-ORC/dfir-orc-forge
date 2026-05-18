@@ -36,6 +36,7 @@ void TextEditWidget::setupUI()
     editor_->setFrameStyle(
         QFrame::NoFrame); // workaround for font overlap on editor's bottom when using 'setDocumentMode(true)' (resourceedition.cpp)
     editor_->viewport()->installEventFilter(this);
+    editor_->installEventFilter(this);
     layout->addWidget(editor_);
 
     status_ = new StatusLabel(this);
@@ -199,6 +200,14 @@ void TextEditWidget::moveCurrentLineDown()
 
 bool TextEditWidget::eventFilter(QObject *obj, QEvent *event)
 {
+    if (obj == editor_ && event->type() == QEvent::KeyPress) {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+        if (keyEvent->key() == Qt::Key_Tab && keyEvent->modifiers() == Qt::NoModifier) {
+            editor_->textCursor().insertText(QStringLiteral("    "));
+            return true;
+        }
+    }
+
     if (obj == editor_->viewport() && event->type() == QEvent::Wheel) {
         QWheelEvent *wheelEvent = static_cast<QWheelEvent *>(event);
         if (wheelEvent->modifiers() & Qt::ControlModifier) {
