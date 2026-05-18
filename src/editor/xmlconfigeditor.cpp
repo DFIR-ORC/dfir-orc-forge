@@ -217,7 +217,7 @@ XmlConfigEditor::XmlConfigEditor(XsdStore &xsdStore, QWidget *parent)
         [this](int position, int charsRemoved, int charsAdded) {
             if (charsRemoved > 0 || charsAdded > 0) {
                 status_->clear();
-                validationTimer_.start(500); // restarts if already running
+                validationTimer_.start(250); // restarts if already running
             }
         });
 
