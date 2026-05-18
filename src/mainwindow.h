@@ -16,6 +16,7 @@
 #include "editor/editorinterface.h"
 
 class XsdStore;
+class TextEditWidget;
 
 class MainWindow : public QMainWindow
 {
@@ -40,6 +41,9 @@ private:
     void reportHelpFailure();
     bool hasModifiedStatus() const;
     void setModifiedStatus(bool value);
+    void updateEditActions(QWidget *focused);
+    void sendEditKey(Qt::Key key, Qt::KeyboardModifiers modifiers = Qt::NoModifier);
+    TextEditWidget *activeTextEditWidget() const;
 
 private:
     std::optional<QString> path_;
@@ -48,6 +52,7 @@ private:
 
     QMenuBar *menuBar_;
     QMenu *fileMenu_;
+    QMenu *editMenu_;
     QMenu *xmlConfigurationMenu_;
     QMenu *helpMenu_;
     QAction *actionOpen_;
@@ -57,6 +62,12 @@ private:
     QAction *actionViewHelp_;
     QAction *actionViewOnlineHelp_;
     QAction *actionAbout_;
+    QAction *actionFind_;
+    QAction *actionGotoLine_;
+    QAction *actionToggleComment_;
+    QAction *actionMoveLineUp_;
+    QAction *actionMoveLineDown_;
+    QAction *actionWordWrap_;
     QAction *actionReloadXsd_;
     QAction *actionNewOrc_;
     QAction *actionNewXmlFastFind_;

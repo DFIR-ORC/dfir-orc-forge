@@ -185,7 +185,32 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(actionAbout_, &QAction::triggered, this, &MainWindow::about);
 
+    connect(actionFind_, &QAction::triggered, this, [this]() {
+        sendEditKey(Qt::Key_F, Qt::ControlModifier);
+    });
+    connect(actionGotoLine_, &QAction::triggered, this, [this]() {
+        sendEditKey(Qt::Key_G, Qt::ControlModifier);
+    });
+    connect(actionToggleComment_, &QAction::triggered, this, [this]() {
+        sendEditKey(Qt::Key_Slash, Qt::ControlModifier);
+    });
+    connect(actionMoveLineUp_, &QAction::triggered, this, [this]() {
+        sendEditKey(Qt::Key_Up, Qt::AltModifier);
+    });
+    connect(actionMoveLineDown_, &QAction::triggered, this, [this]() {
+        sendEditKey(Qt::Key_Down, Qt::AltModifier);
+    });
+    connect(actionWordWrap_, &QAction::triggered, this, [this](bool checked) {
+        if (auto *tw = activeTextEditWidget()) {
+            tw->setWordWrap(checked);
+        }
+    });
+
     xsdStore_->loadFromResources();
+
+    connect(qApp, &QApplication::focusChanged, this, [this](QWidget *, QWidget *now) {
+        updateEditActions(now);
+    });
 
 #ifndef _DEBUG
     actionReloadXsd_->setVisible(false);
@@ -199,6 +224,66 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 MainWindow::~MainWindow() {}
+
+void MainWindow::updateEditActions(QWidget *focused)
+{
+    auto *textWidget = activeTextEditWidget();
+    const bool active = textWidget != nullptr;
+
+    const QList<QAction *> editActions
+        = {actionFind_,
+           actionGotoLine_,
+           actionToggleComment_,
+           actionMoveLineUp_,
+           actionMoveLineDown_,
+           actionWordWrap_};
+    for (auto *action : editActions) {
+        action->setEnabled(active);
+    }
+
+    if (active) {
+        actionWordWrap_->setChecked(textWidget->wordWrap());
+    }
+}
+
+TextEditWidget *MainWindow::activeTextEditWidget() const
+{
+    auto *focused = QApplication::focusWidget();
+    if (!focused || !qobject_cast<QTextEdit *>(focused)) {
+        return nullptr;
+    }
+
+    auto *central = centralWidget();
+    QWidget *w = focused->parentWidget();
+    while (w) {
+        if (auto *tw = qobject_cast<TextEditWidget *>(w)) {
+            // Confirm it lives inside the current central widget.
+            QWidget *inner = tw;
+            while (inner) {
+                if (inner == central) {
+                    return tw;
+                }
+                inner = inner->parentWidget();
+            }
+            return nullptr;
+        }
+        w = w->parentWidget();
+    }
+    return nullptr;
+}
+
+void MainWindow::sendEditKey(Qt::Key key, Qt::KeyboardModifiers modifiers)
+{
+    auto *focused = QApplication::focusWidget();
+    if (!focused) {
+        return;
+    }
+
+    QKeyEvent press(QEvent::KeyPress, key, modifiers);
+    QCoreApplication::sendEvent(focused, &press);
+    QKeyEvent release(QEvent::KeyRelease, key, modifiers);
+    QCoreApplication::sendEvent(focused, &release);
+}
 
 void MainWindow::setupUI()
 {
@@ -269,6 +354,57 @@ void MainWindow::setupUI()
         action->setIconVisibleInMenu(false);
     }
 
+    actionFind_ = new QAction("Find", this);
+    actionFind_->setShortcut(QKeySequence::Find);
+    actionFind_->setShortcutContext(Qt::WidgetShortcut);
+    actionFind_->setEnabled(false);
+
+    actionGotoLine_ = new QAction("Go to Line", this);
+    actionGotoLine_->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_G));
+    actionGotoLine_->setShortcutContext(Qt::WidgetShortcut);
+    actionGotoLine_->setEnabled(false);
+
+    actionToggleComment_ = new QAction("Toggle Line Comment", this);
+    actionToggleComment_->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Slash));
+    actionToggleComment_->setShortcutContext(Qt::WidgetShortcut);
+    actionToggleComment_->setEnabled(false);
+
+    actionMoveLineUp_ = new QAction("Move Line Up", this);
+    actionMoveLineUp_->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Up));
+    actionMoveLineUp_->setShortcutContext(Qt::WidgetShortcut);
+    actionMoveLineUp_->setEnabled(false);
+
+    actionMoveLineDown_ = new QAction("Move Line Down", this);
+    actionMoveLineDown_->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Down));
+    actionMoveLineDown_->setShortcutContext(Qt::WidgetShortcut);
+    actionMoveLineDown_->setEnabled(false);
+
+    // QTextEdit defaults to WrapAtWordBoundaryOrAnywhere, so word wrap starts on.
+    actionWordWrap_ = new QAction("Word Wrap", this);
+    actionWordWrap_->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Z));
+    actionWordWrap_->setShortcutContext(Qt::WidgetShortcut);
+    actionWordWrap_->setCheckable(true);
+    actionWordWrap_->setChecked(true);
+    actionWordWrap_->setEnabled(false);
+
+    auto *editSeparator = new QAction(this);
+    editSeparator->setSeparator(true);
+
+    editMenu_ = new QMenu("Edit", this);
+    editMenu_->addActions(
+        {actionFind_,
+         actionGotoLine_,
+         actionToggleComment_,
+         actionMoveLineUp_,
+         actionMoveLineDown_,
+         editSeparator,
+         actionWordWrap_});
+
+    for (auto *action : editMenu_->actions()) {
+        action->setShortcutVisibleInContextMenu(true);
+        action->setIconVisibleInMenu(false);
+    }
+
     actionViewHelp_ = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::HelpFaq), "View Help", this);
     actionViewHelp_->setShortcut(QKeySequence::HelpContents);
     actionViewOnlineHelp_
@@ -290,6 +426,7 @@ void MainWindow::setupUI()
 
     menuBar_ = new QMenuBar(this);
     menuBar_->insertMenu(nullptr, fileMenu_);
+    menuBar_->insertMenu(nullptr, editMenu_);
     menuBar_->insertMenu(nullptr, helpMenu_);
 
     auto *widget = new QWidget(this);
