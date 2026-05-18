@@ -15,6 +15,7 @@
 #include "formatter/formatter.h"
 #include "resource/resource.h"
 #include "resource/resourcedirectory.h"
+#include "textedit/texteditwidget.h"
 #include "utils/log.h"
 
 namespace {
@@ -248,6 +249,11 @@ void ResourceEditor::onResourceTreeItemClicked(QTreeWidgetItem *item, int column
 
     if (context->TabIndex()) {
         resourceEdition_->setCurrentIndex(*context->TabIndex());
+        if (auto *edition = qobject_cast<EditionWidget *>(resourceEdition_->currentWidget())) {
+            if (auto *tw = edition->findChild<TextEditWidget *>()) {
+                tw->textEdit().setFocus();
+            }
+        }
         return;
     }
 
@@ -270,6 +276,9 @@ void ResourceEditor::onResourceTreeItemClicked(QTreeWidgetItem *item, int column
               ->addTab(edition, QString::fromStdWString(context->Resource().FriendlyName()));
     context->SetTabIndex(tabIndex);
     resourceEdition_->setCurrentIndex(tabIndex);
+    if (auto *tw = edition->findChild<TextEditWidget *>()) {
+        tw->textEdit().setFocus();
+    }
 
     connect(
         &edition->editorSignals(),
