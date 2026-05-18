@@ -90,6 +90,17 @@ QTextEdit &TextEditWidget::textEdit()
     return *editor_;
 }
 
+void TextEditWidget::setWordWrap(bool enable)
+{
+    editor_->setWordWrapMode(
+        enable ? QTextOption::WrapAtWordBoundaryOrAnywhere : QTextOption::NoWrap);
+}
+
+bool TextEditWidget::wordWrap() const
+{
+    return editor_->wordWrapMode() != QTextOption::NoWrap;
+}
+
 void TextEditWidget::keyPressEvent(QKeyEvent *event)
 {
     if (event->modifiers() & Qt::AltModifier) {

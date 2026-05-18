@@ -25,6 +25,8 @@ public:
     ~TextEditWidget();
 
     QTextEdit &textEdit();
+    void setWordWrap(bool enable);
+    bool wordWrap() const;
 
 protected:
     void setupUI();
