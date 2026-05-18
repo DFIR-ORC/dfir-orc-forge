@@ -36,7 +36,7 @@ void setupThemeChangeDetection(XmlHighlighter *highlighter)
     };
 
     QApplication::instance()->installEventFilter(
-        new ThemeChangeEventFilter(highlighter, QApplication::instance()));
+        new ThemeChangeEventFilter(highlighter, highlighter));
 }
 
 XmlHighlighter::XmlHighlighter(QTextDocument *parent)
