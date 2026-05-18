@@ -202,6 +202,8 @@ XmlConfigEditor::XmlConfigEditor(XsdStore &xsdStore, QWidget *parent)
     , xsdStore_(xsdStore)
     , dom_(std::make_unique<XmlDom>())
 {
+    validationTimer_.setSingleShot(true);
+    connect(&validationTimer_, &QTimer::timeout, this, &XmlConfigEditor::validate);
     connect(
         editor_->document(),
         &QTextDocument::contentsChange,
@@ -215,7 +217,7 @@ XmlConfigEditor::XmlConfigEditor(XsdStore &xsdStore, QWidget *parent)
         [this](int position, int charsRemoved, int charsAdded) {
             if (charsRemoved > 0 || charsAdded > 0) {
                 status_->clear();
-                validationTimer_.singleShot(500, this, &XmlConfigEditor::validate);
+                validationTimer_.start(500); // restarts if already running
             }
         });
 

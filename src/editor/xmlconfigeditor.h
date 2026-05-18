@@ -13,6 +13,7 @@
 #include <optional>
 
 #include <QString>
+#include <QTimer>
 
 class XsdStore;
 class XmlDom;

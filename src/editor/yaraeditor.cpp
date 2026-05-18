@@ -194,6 +194,8 @@ std::unique_ptr<YaraInstance> YaraEditor::g_instance = nullptr;
 YaraEditor::YaraEditor(QWidget *parent)
     : TextEditWidget(parent)
 {
+    validationTimer_.setSingleShot(true);
+    connect(&validationTimer_, &QTimer::timeout, this, &YaraEditor::validate);
     connect(
         editor_->document(),
         &QTextDocument::contentsChange,
@@ -206,7 +208,7 @@ YaraEditor::YaraEditor(QWidget *parent)
         this,
         [this](int position, int charsRemoved, int charsAdded) {
             if (charsRemoved > 0 || charsAdded > 0) {
-                validationTimer_.singleShot(500, this, &YaraEditor::validate);
+                validationTimer_.start(500); // restarts if already running
             }
         });
 
