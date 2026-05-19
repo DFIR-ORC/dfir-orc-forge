@@ -219,13 +219,13 @@ else()
     set(BINARY_DIR ${CMAKE_BINARY_DIR})
 endif()
 
-set(QT_ARCHIVE_FILENAME "qtbase-everywhere-src-6.8.3.zip")
+set(QT_ARCHIVE_FILENAME "qtbase-everywhere-src-6.11.1.zip")
 set(QT_ARCHIVE "${BINARY_DIR}/${QT_ARCHIVE_FILENAME}")
-set(QT_URL "https://download.qt.io/official_releases/qt/6.8/6.8.3/submodules/qtbase-everywhere-src-6.8.3.zip")
+set(QT_URL "https://download.qt.io/official_releases/qt/6.11/6.11.1/submodules/qtbase-everywhere-src-6.11.1.zip")
 
 string(REGEX REPLACE "\\.zip$" "" QT_BASENAME ${QT_ARCHIVE_FILENAME})
 set(QT_SRC_DIR "${BINARY_DIR}/${QT_BASENAME}")
-set(QT_ARCHIVE_SHA256 992BF7766E214A341EF793EB3665FB784787D2FD666955F5F507F4C6F1F770DD)
+set(QT_ARCHIVE_SHA256 3529CC37297A5A7AAE4486843B9FD41C30DF1D79A770F85E240B537DCC327CA5)
 
 if (ENABLE_STATIC_QT)
     # Not supported at link with Qt debug build
