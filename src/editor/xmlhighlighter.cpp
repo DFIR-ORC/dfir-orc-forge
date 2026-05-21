@@ -91,7 +91,7 @@ void XmlHighlighter::setupHighlightingRules()
     // XML value format
     m_valueFormat.setForeground(m_currentColors.values);
     m_valueFormat.setFontWeight(QFont::Normal);
-    m_highlightingRules.append({QRegularExpression(R"("[^"]*")"), m_valueFormat});
+    m_highlightingRules.append({QRegularExpression(R"("[^"]*"|'[^']*')"), m_valueFormat});
 
     // XML comment format
     m_commentFormat.setForeground(m_currentColors.comments);
@@ -120,7 +120,9 @@ void XmlHighlighter::highlightBlock(const QString &text)
     setCurrentBlockState(0);
 
     int startIndex = 0;
-    if (previousBlockState() != 1) {
+    if (previousBlockState() == 1) {
+        startIndex = 0;
+    } else {
         startIndex = text.indexOf(commentStart);
     }
 
