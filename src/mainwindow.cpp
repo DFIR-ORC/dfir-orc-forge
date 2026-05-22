@@ -290,45 +290,46 @@ void MainWindow::setupUI()
     windowTitle_ = "DFIR-ORC Forge";
     setWindowTitle(windowTitle_);
 
-    actionOpen_ = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::DocumentOpen), "Open", this);
+    actionOpen_ = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::DocumentOpen), "&Open", this);
     actionOpen_->setShortcut(QKeySequence::Open);
 
-    actionSave_ = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::DocumentSave), "Save", this);
+    actionSave_ = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::DocumentSave), "&Save", this);
     actionSave_->setShortcut(QKeySequence::Save);
     actionSave_->setEnabled(false);
 
-    actionSaveAs_ = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::DocumentSaveAs), "Save As", this);
+    actionSaveAs_
+        = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::DocumentSaveAs), "Save &As", this);
     actionSaveAs_->setShortcut(QKeySequence::SaveAs);
     actionSaveAs_->setEnabled(false);
 
-    actionExit_ = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::WindowClose), "Exit", this);
+    actionExit_ = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::WindowClose), "E&xit", this);
     actionExit_->setMenuRole(QAction::MenuRole::QuitRole);
     actionExit_->setShortcut(QKeySequence::Quit);
 
-    actionReloadXsd_ = new QAction("Reload XSD", this);
+    actionReloadXsd_ = new QAction("&Reload XSD", this);
 
-    actionNewOrc_ = new QAction("New DFIR-ORC", this);
+    actionNewOrc_ = new QAction("New &DFIR-ORC", this);
     actionNewOrc_->setShortcut(QKeySequence::New);
 
-    actionNewXmlFastFind_ = new QAction("FastFind", this);
-    actionNewXmlFatInfo_ = new QAction("FatInfo", this);
-    actionNewXmlGetSamples_ = new QAction("GetSamples", this);
-    actionNewXmlGetSectors_ = new QAction("GetSectors", this);
-    actionNewXmlGetThis_ = new QAction("GetThis", this);
-    actionNewXmlNtfsInfo_ = new QAction("NtfsInfo", this);
-    actionNewXmlObjInfo_ = new QAction("ObjInfo", this);
-    actionNewXmlRegInfo_ = new QAction("RegInfo", this);
-    actionNewXmlUsnInfo_ = new QAction("UsnInfo", this);
+    actionNewXmlFastFind_ = new QAction("&FastFind", this);
+    actionNewXmlFatInfo_ = new QAction("F&atInfo", this);
+    actionNewXmlGetSamples_ = new QAction("Get&Samples", this);
+    actionNewXmlGetSectors_ = new QAction("GetS&ectors", this);
+    actionNewXmlGetThis_ = new QAction("Get&This", this);
+    actionNewXmlNtfsInfo_ = new QAction("&NtfsInfo", this);
+    actionNewXmlObjInfo_ = new QAction("&ObjInfo", this);
+    actionNewXmlRegInfo_ = new QAction("&RegInfo", this);
+    actionNewXmlUsnInfo_ = new QAction("&UsnInfo", this);
 
     auto actionSeparator = new QAction();
     actionSeparator->setSeparator(true);
 
-    actionNewXmlLocal_ = new QAction("Local", this);
-    actionNewXmlWolf_ = new QAction("WolfLauncher", this);
+    actionNewXmlLocal_ = new QAction("&Local", this);
+    actionNewXmlWolf_ = new QAction("&WolfLauncher", this);
 
-    actionNewYaraRule_ = new QAction("New Yara rule", this);
+    actionNewYaraRule_ = new QAction("New &Yara rule", this);
 
-    xmlConfigurationMenu_ = new QMenu("New XML configuration");
+    xmlConfigurationMenu_ = new QMenu("New &XML configuration");
     xmlConfigurationMenu_->addActions(
         {actionNewXmlFastFind_,
          actionNewXmlFatInfo_,
@@ -343,7 +344,7 @@ void MainWindow::setupUI()
          actionNewXmlLocal_,
          actionNewXmlWolf_});
 
-    fileMenu_ = new QMenu("File", this);
+    fileMenu_ = new QMenu("&File", this);
     fileMenu_->addAction(actionNewOrc_);
     fileMenu_->addMenu(xmlConfigurationMenu_);
     fileMenu_->addActions(
@@ -354,33 +355,33 @@ void MainWindow::setupUI()
         action->setIconVisibleInMenu(false);
     }
 
-    actionFind_ = new QAction("Find", this);
+    actionFind_ = new QAction("&Find", this);
     actionFind_->setShortcut(QKeySequence::Find);
     actionFind_->setShortcutContext(Qt::WidgetShortcut);
     actionFind_->setEnabled(false);
 
-    actionGotoLine_ = new QAction("Go to Line", this);
+    actionGotoLine_ = new QAction("&Go to Line", this);
     actionGotoLine_->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_G));
     actionGotoLine_->setShortcutContext(Qt::WidgetShortcut);
     actionGotoLine_->setEnabled(false);
 
-    actionToggleComment_ = new QAction("Toggle Line Comment", this);
+    actionToggleComment_ = new QAction("&Toggle Line Comment", this);
     actionToggleComment_->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Slash));
     actionToggleComment_->setShortcutContext(Qt::WidgetShortcut);
     actionToggleComment_->setEnabled(false);
 
-    actionMoveLineUp_ = new QAction("Move Line Up", this);
+    actionMoveLineUp_ = new QAction("Move Line &Up", this);
     actionMoveLineUp_->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Up));
     actionMoveLineUp_->setShortcutContext(Qt::WidgetShortcut);
     actionMoveLineUp_->setEnabled(false);
 
-    actionMoveLineDown_ = new QAction("Move Line Down", this);
+    actionMoveLineDown_ = new QAction("Move Line &Down", this);
     actionMoveLineDown_->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Down));
     actionMoveLineDown_->setShortcutContext(Qt::WidgetShortcut);
     actionMoveLineDown_->setEnabled(false);
 
     // QTextEdit defaults to WrapAtWordBoundaryOrAnywhere, so word wrap starts on.
-    actionWordWrap_ = new QAction("Word Wrap", this);
+    actionWordWrap_ = new QAction("&Word Wrap", this);
     actionWordWrap_->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Z));
     actionWordWrap_->setShortcutContext(Qt::WidgetShortcut);
     actionWordWrap_->setCheckable(true);
@@ -390,7 +391,7 @@ void MainWindow::setupUI()
     auto *editSeparator = new QAction(this);
     editSeparator->setSeparator(true);
 
-    editMenu_ = new QMenu("Edit", this);
+    editMenu_ = new QMenu("&Edit", this);
     editMenu_->addActions(
         {actionFind_,
          actionGotoLine_,
@@ -405,11 +406,18 @@ void MainWindow::setupUI()
         action->setIconVisibleInMenu(false);
     }
 
-    actionViewHelp_ = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::HelpFaq), "View Help", this);
-    actionViewHelp_->setShortcut(QKeySequence::HelpContents);
+    // Only offer the local help when usable documentation is embedded
+    actionViewHelp_ = nullptr;
+    if (GetEmbeddedDocumentation()) {
+        actionViewHelp_
+            = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::HelpFaq), "&View Help", this);
+        actionViewHelp_->setShortcut(QKeySequence::HelpContents);
+    }
+
     actionViewOnlineHelp_
-        = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::InsertLink), "View Online Help", this);
-    actionAbout_ = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::HelpAbout), "About", this);
+        = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::InsertLink), "View &Online Help", this);
+    actionViewOnlineHelp_->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_F1));
+    actionAbout_ = new QAction(QIcon::fromTheme(QIcon::ThemeIcon::HelpAbout), "&About", this);
 
     QList<QAction *> helpActions;
     if (actionViewHelp_) {
@@ -421,7 +429,7 @@ void MainWindow::setupUI()
         action->setIconVisibleInMenu(false);
     }
 
-    helpMenu_ = new QMenu("Help", this);
+    helpMenu_ = new QMenu("&Help", this);
     helpMenu_->addActions(helpActions);
 
     menuBar_ = new QMenuBar(this);
