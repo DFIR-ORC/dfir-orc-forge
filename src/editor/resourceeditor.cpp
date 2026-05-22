@@ -50,7 +50,6 @@ ResourceEditor::ResourceEditor(XsdStore &xsdStore, QWidget *parent)
     resourceTreeWidget_ = new QTreeWidget(this);
     resourceTreeWidget_->setHeaderHidden(true);
     resourceTreeWidget_->setColumnCount(1);
-    resourceTreeWidget_->setColumnWidth(0, 200);
     addWidget(resourceTreeWidget_);
 
     resourceEdition_ = new QTabWidget(this);
@@ -63,6 +62,7 @@ ResourceEditor::ResourceEditor(XsdStore &xsdStore, QWidget *parent)
     setStretchFactor(1, 1);
     setHandleWidth(2);
     setContentsMargins(0, 0, 0, 0);
+    setSizes({320, 1});
 
     connect(
         resourceTreeWidget_,
