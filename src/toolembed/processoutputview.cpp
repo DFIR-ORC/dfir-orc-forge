@@ -93,12 +93,19 @@ ProcessOutputView::~ProcessOutputView()
 }
 
 void ProcessOutputView::run(
-    const QString &program, const QStringList &arguments, const QString &outPath)
+    const QString &program,
+    const QStringList &arguments,
+    const QProcessEnvironment &env,
+    const QString &outPath)
 {
     outPath_ = outPath;
     output_->clear();
     lineBuffer_.clear();
     status_->setText(runningMessage_);
+
+    if (!env.isEmpty()) {
+        process_->setProcessEnvironment(env);
+    }
 
     process_->start(program, arguments);
 

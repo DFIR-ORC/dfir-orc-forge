@@ -114,11 +114,15 @@ void ToolEmbedView::run(const QString &exe, const QString &embedConfig, const QS
     }
     const auto outPath = outDir.absoluteFilePath("DFIR-ORC.exe");
 
+    auto env = QProcessEnvironment::systemEnvironment();
+    env.insert("__COMPAT_LAYER", "RunAsInvoker");
+
     outputView_->run(
         exe,
         {"toolembed",
          QString("/embed=%1").arg(embedConfig),
          QString("/out=%1").arg(outPath),
          "/force"},
+        env,
         outPath);
 }

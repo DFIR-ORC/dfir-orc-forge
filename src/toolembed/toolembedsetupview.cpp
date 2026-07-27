@@ -762,6 +762,11 @@ std::expected<QString, QString> ToolEmbedSetupView::runToolembedDump(
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
     QProcess proc;
+
+    auto env = QProcessEnvironment::systemEnvironment();
+    env.insert("__COMPAT_LAYER", "RunAsInvoker");
+    proc.setProcessEnvironment(env);
+
     proc.setProgram(srcExe);
     proc.setArguments(
         {QStringLiteral("toolembed"),

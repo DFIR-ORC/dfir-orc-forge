@@ -27,7 +27,11 @@ public:
     explicit ProcessOutputView(QWidget *parent = nullptr);
     ~ProcessOutputView() override;
 
-    void run(const QString &program, const QStringList &arguments, const QString &outPath);
+    void run(
+        const QString &program,
+        const QStringList &arguments,
+        const QProcessEnvironment &environment,
+        const QString &outPath);
 
     void setRunningMessage(const QString &msg);
     void setSuccessMessage(const QString &msg);
