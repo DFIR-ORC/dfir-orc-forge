@@ -110,6 +110,7 @@ source_group(TREE "${CMAKE_SOURCE_DIR}/src" FILES ${SOURCE_FILES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE TRUE
+    OUTPUT_NAME forge
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE

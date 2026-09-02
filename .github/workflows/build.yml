@@ -60,8 +60,10 @@ jobs:
       with:
         name: dfir-orc-forge_${{ steps.version.outputs.version }}
         path: |
-          ${{ env.ARTIFACT_DIR }}/dfir-orc-forge.exe
-          ${{ env.ARTIFACT_DIR }}/dfir-orc-forge.pdb
+          ${{ env.ARTIFACT_DIR }}/DFIR-ORC-Forge.exe
+          ${{ env.ARTIFACT_DIR }}/forge.exe
+          ${{ env.ARTIFACT_DIR }}/forge.pdb
+        if-no-files-found: error
         retention-days: 1
 
     - name: Publish to GitHub Release
@@ -73,22 +75,14 @@ jobs:
         $tag = "${{ github.ref_name }}"
         $isPrerelease = $tag -match '-(alpha|beta|rc)\d*$'
 
-    - name: Upload release
-      uses: DFIR-ORC-private/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ env.ARTIFACT_DIR }}/dfir-orc-forge.exe
-        asset_name: dfir-orc-forge-${{ steps.version.outputs.version }}-windows-amd64.exe
-        asset_content_type: application/octet-stream
+        $ghArgs = @(
+          "release", "create", $tag,
+          "--title", $tag,
+          "--notes-file", "${{ github.workspace }}\release-notes.md",
+          "${{ env.ARTIFACT_DIR }}/DFIR-ORC-Forge.exe",
+          "${{ env.ARTIFACT_DIR }}/forge.pdb"
+        )
 
-    - name: Upload PDB
-      uses: DFIR-ORC-private/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ env.ARTIFACT_DIR }}/dfir-orc-forge.pdb
-        asset_name: dfir-orc-forge-${{ steps.version.outputs.version }}-windows-amd64.pdb
-        asset_content_type: application/octet-stream
+        if ($isPrerelease) { $ghArgs += "--prerelease" }
+
+        gh @ghArgs
