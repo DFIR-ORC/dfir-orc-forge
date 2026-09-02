@@ -154,20 +154,38 @@ function(message_asset label cached value)
 endfunction()
 
 set(DFIRORC_REPO_URL "https://github.com/DFIR-ORC/dfir-orc")
+set(DFIRORC_CONFIG_REPO_URL "https://github.com/DFIR-ORC/dfir-orc-config")
+set(DFIRORC_DOC_REPO_URL "https://github.com/DFIR-ORC/dfir-orc.github.io")
 
-if (DFIRORC_DOCUMENTATION)
-    set(DFIRORC_DOC "${CMAKE_BINARY_DIR}/dfir-orc.github.io.zip")
+if (DFIRORC_DOC)
+    # Archive the documentation at configure time (entries are expected under
+    # 'docs/'); the embedded commit is empty when unknown.
+    fetch_repo_archive(
+        SPEC "${DFIRORC_DOC}"
+        REPO_URL "${DFIRORC_DOC_REPO_URL}"
+        ARCHIVE "${CMAKE_BINARY_DIR}/dfir-orc.github.io.zip"
+        # The rendered site (with its 'docs' directory) lives on gh-pages, the
+        # default branch holds the sphinx sources.
+        REF gh-pages
+        DIRECTORY docs
+        OUTPUT_ARCHIVE DFIRORC_DOC_ARCHIVE
+        OUTPUT_COMMIT DFIRORC_DOC_COMMIT
+        OUTPUT_CACHED DFIRORC_DOC_CACHED)
+
+    set(_doc "${DFIRORC_DOC}")
+    if (DFIRORC_DOC_COMMIT)
+        string(APPEND _doc " (${DFIRORC_DOC_COMMIT})")
+    endif()
+    message_asset("DFIR-ORC documentation" "${DFIRORC_DOC_CACHED}" "${_doc}")
 
     add_custom_command(
         TARGET ${PROJECT_NAME}
         POST_BUILD
-        WORKING_DIRECTORY "${DOF_ROOT}/external/dfir-orc.github.io"
-        COMMAND ${CMAKE_COMMAND} -E tar cf ${DFIRORC_DOC} --format=zip "docs"
         COMMAND ${CMAKE_COMMAND} -E echo "Embedding DFIR-ORC documentation ${DFIRORC_DOC}"
         COMMAND ${RCEDIT_EXECUTABLE}
             set --type "RT_RCDATA"
                 --name "DFIRORC_DOC"
-                --value-path ${DFIRORC_DOC}
+                --value-path ${DFIRORC_DOC_ARCHIVE}
                 $<TARGET_FILE:${PROJECT_NAME}>
         VERBATIM
     )
@@ -188,26 +206,32 @@ if (DFIRORC_DOCUMENTATION)
     endif()
 endif()
 
-if (DFIRORC_CONFIGURATION)
-    set(DFIRORC_CONFIG "${CMAKE_BINARY_DIR}/dfir-orc-config.zip")
+if (DFIRORC_CONFIG)
+    # Archive the configuration at configure time; the embedded commit is
+    # empty when unknown.
+    fetch_repo_archive(
+        SPEC "${DFIRORC_CONFIG}"
+        REPO_URL "${DFIRORC_CONFIG_REPO_URL}"
+        ARCHIVE "${CMAKE_BINARY_DIR}/dfir-orc-config.zip"
+        REF fabienfl/10.3.0
+        OUTPUT_ARCHIVE DFIRORC_CONFIG_ARCHIVE
+        OUTPUT_COMMIT DFIRORC_CONFIG_COMMIT
+        OUTPUT_CACHED DFIRORC_CONFIG_CACHED)
 
-    file(GLOB_RECURSE CONFIG_FILES
-        RELATIVE "${DOF_ROOT}/external/dfir-orc-config"
-        "${DOF_ROOT}/external/dfir-orc-config/*"
-    )
-
-    list(FILTER CONFIG_FILES EXCLUDE REGEX "^\\.git.*")
+    set(_config "${DFIRORC_CONFIG}")
+    if (DFIRORC_CONFIG_COMMIT)
+        string(APPEND _config " (${DFIRORC_CONFIG_COMMIT})")
+    endif()
+    message_asset("DFIR-ORC configuration" "${DFIRORC_CONFIG_CACHED}" "${_config}")
 
     add_custom_command(
         TARGET ${PROJECT_NAME}
         POST_BUILD
-        WORKING_DIRECTORY "${DOF_ROOT}/external/dfir-orc-config"
-        COMMAND ${CMAKE_COMMAND} -E tar cf ${DFIRORC_CONFIG} --format=zip -- ${CONFIG_FILES}
         COMMAND ${CMAKE_COMMAND} -E echo "Embedding DFIR-ORC configuration ${DFIRORC_CONFIG}"
         COMMAND ${RCEDIT_EXECUTABLE}
             set --type "RT_RCDATA"
                 --name "DFIRORC_CONFIG"
-                --value-path ${DFIRORC_CONFIG}
+                --value-path ${DFIRORC_CONFIG_ARCHIVE}
                 $<TARGET_FILE:${PROJECT_NAME}>
         VERBATIM
     )
@@ -316,3 +340,14 @@ else()
         VERBATIM
     )
 endif()
+
+# The resources are embedded by POST_BUILD commands, which an up-to-date
+# target skips: compile the identity of the embedded content so that changing
+# any of it relinks the executable and re-runs the embedding.
+string(SHA256 DFIRORC_EMBEDDED_ID
+    "${DFIRORC_EXECUTABLE}|${DFIRORC_CAPSULE}|${DFIRORC_CONFIG}|${DFIRORC_CONFIG_COMMIT}|${DFIRORC_DOC}|${DFIRORC_DOC_COMMIT}")
+file(CONFIGURE
+    OUTPUT "${GENERATED_SRC_DIR}/embeddedid.cpp"
+    CONTENT "extern const char* const kDfirOrcEmbeddedId = \"${DFIRORC_EMBEDDED_ID}\";\n"
+)
+target_sources(${PROJECT_NAME} PRIVATE "${GENERATED_SRC_DIR}/embeddedid.cpp")

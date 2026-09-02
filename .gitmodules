@@ -4,9 +4,3 @@
 [submodule "external/rcedit"]
 	path = external/rcedit
 	url = https://github.com/DFIR-ORC/rcedit.git
-[submodule "external/dfir-orc.github.io"]
-	path = external/dfir-orc.github.io
-	url = https://github.com/DFIR-ORC/dfir-orc.github.io.git
-[submodule "external/dfir-orc-config"]
-	path = external/dfir-orc-config
-	url = https://github.com/DFIR-ORC/dfir-orc-config.git

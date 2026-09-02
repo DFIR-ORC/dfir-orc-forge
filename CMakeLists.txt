@@ -89,8 +89,23 @@ if(NOT DFIRORC_CAPSULE)
         "is exposed to DLL side-loading. No DFIR-ORC-Forge.exe will be produced.")
 endif()
 
-option(DFIRORC_CONFIGURATION "Embed DFIR-ORC configuration" ON)
-option(DFIRORC_DOCUMENTATION "Embed DFIR-ORC documentation" ON)
+# DFIRORC_CONFIG and DFIRORC_DOC accept:
+#   OFF                          disable embedding (an empty value too)
+#   LATEST (default)             clone the default repository at HEAD
+#   <version> | <commit>         pin a tag or a commit of the default repository
+#   <repo-url>[,<ref>]           clone a repository (https or ssh) at a branch,
+#                                tag or commit appended with ',' or ';'
+#                                (default: HEAD)
+#   <path>                       local directory (zipped at build time) or
+#                                archive embedded as is
+# Repositories are cloned recursively: nested submodule content is embedded.
+# Examples:
+#   -DDFIRORC_CONFIG=v1.2.0
+#   -DDFIRORC_CONFIG=git@github.com:DFIR-ORC/dfir-orc-config.git,f0c1d2e
+#   -DDFIRORC_CONFIG=C:/path/to/dfir-orc-config
+#   -DDFIRORC_CONFIG=C:/path/to/dfir-orc-config.zip
+set(DFIRORC_CONFIG "LATEST" CACHE STRING "DFIR-ORC configuration to embed: OFF, LATEST, <version>, <commit>, <repo-url>[,<ref>] or <path>")
+set(DFIRORC_DOC "LATEST" CACHE STRING "DFIR-ORC documentation to embed: OFF, LATEST, <version>, <commit>, <repo-url>[,<ref>] or <path>")
 
 set(DOF_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -114,15 +129,6 @@ git_info(
     COMMIT DOF_COMMIT
 )
 
-# Submodule commit hashes (empty string when not present)
-git_info(
-    REPO_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/dfir-orc-config
-    COMMIT DFIRORC_CONFIG_COMMIT
-)
-git_info(
-    REPO_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/dfir-orc.github.io
-    COMMIT DFIRORC_DOC_COMMIT
-)
 
 project(dfir-orc-forge)
 

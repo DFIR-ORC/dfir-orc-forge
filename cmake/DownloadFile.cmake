@@ -555,6 +555,334 @@ function(download_asset)
     endif()
 endfunction()
 
+# TRUE when a sources specification names a repository to clone (LATEST, a
+# version tag or a commit to pin, an http(s) or ssh remote), FALSE for a local
+# path.
+# A commit is at least 7 hex digits (CMake regexes have no bounded repetition).
+function(_is_commit value out_var)
+    string(LENGTH "${value}" _length)
+    if(value MATCHES "^[0-9a-f]+$" AND _length GREATER_EQUAL 7 AND _length LESS_EQUAL 40)
+        set(${out_var} TRUE PARENT_SCOPE)
+    else()
+        set(${out_var} FALSE PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(is_repo_spec spec out_var)
+    string(REPLACE "," ";" _spec "${spec}")
+    list(GET _spec 0 _source)
+    _is_commit("${_source}" _commit)
+    set(_result FALSE)
+    if(_source STREQUAL "LATEST"
+        OR _commit
+        OR _source MATCHES "^v?[0-9]+(\\.[0-9]+)*(-[0-9A-Za-z.]+)?$"
+        OR _source MATCHES "^https?://"
+        OR _source MATCHES "^ssh://"
+        OR _source MATCHES "^[^/@]+@[^/:]+:")
+        set(_result TRUE)
+    endif()
+    set(${out_var} ${_result} PARENT_SCOPE)
+endfunction()
+
+# Zip the files listed in <files_var> (paths relative to <workdir>) into
+# <archive>; the list goes through a file to stay clear of command line length
+# limits.
+function(_zip_files archive workdir files_var)
+    list(JOIN ${files_var} "\n" _files_lines)
+    file(WRITE "${archive}.files" "${_files_lines}\n")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar cf "${archive}" --format=zip
+            "--files-from=${archive}.files"
+        WORKING_DIRECTORY "${workdir}"
+        RESULT_VARIABLE _rc
+    )
+    if(NOT _rc EQUAL 0)
+        file(REMOVE "${archive}")
+        message(FATAL_ERROR "Failed to archive ${workdir} into ${archive}")
+    endif()
+endfunction()
+
+# Run git in <workdir> and return its exit code.
+function(_git_run rc_var workdir)
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" -C "${workdir}" ${ARGN}
+        RESULT_VARIABLE _rc
+    )
+    set(${rc_var} ${_rc} PARENT_SCOPE)
+endfunction()
+
+# Clone a repository (shallow, recursing into submodules) at a git reference
+# and archive its working tree into a zip laid out like the embedded
+# resources: entry names relative to the repository root, root '.git*' entries
+# excluded, submodule content included. The specification is resolved like
+# download_asset() resolves assets:
+#   LATEST | <version> | <commit> | <repo-url>[,<ref>]
+# LATEST, a bare version tag (e.g. v1.2.3) and a bare commit use REPO_URL; a
+# branch, tag or commit is appended to a repository URL (https or ssh) with
+# ',' or ';' (default: HEAD). The clone and the archive are reused while the
+# reference still resolves to the same commit on the remote; a moving
+# reference (HEAD, a branch) is cloned again when it advances.
+#
+#   clone_repo_archive(
+#       SPEC          "${DFIRORC_CONFIG}"
+#       REPO_URL      https://github.com/DFIR-ORC/dfir-orc-config
+#       ARCHIVE       "${CMAKE_BINARY_DIR}/dfir-orc-config.zip"
+#       REF           gh-pages        # optional: reference used when SPEC does
+#                                     # not name one (default: HEAD)
+#       DIRECTORY     docs            # optional: only archive this subdirectory
+#                                     # (entry names keep the 'docs/' prefix)
+#       OUTPUT_COMMIT DFIRORC_CONFIG_COMMIT   # optional: the cloned commit
+#       OUTPUT_CACHED _cached)                # optional: TRUE when the previous
+#                                             # clone and archive were reused
+#
+function(clone_repo_archive)
+    set(oneValueArgs SPEC REPO_URL ARCHIVE REF DIRECTORY OUTPUT_COMMIT OUTPUT_CACHED)
+    # PARSE_ARGV keeps ';' inside argument values, which a SPEC using ';' as
+    # the reference separator relies on.
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "${oneValueArgs}" "")
+
+    foreach(required SPEC REPO_URL ARCHIVE)
+        if(NOT ARG_${required})
+            message(FATAL_ERROR "clone_repo_archive: ${required} is required")
+        endif()
+    endforeach()
+
+    if(NOT ARG_REF)
+        set(ARG_REF "HEAD")
+    endif()
+
+    string(REPLACE "," ";" _spec "${ARG_SPEC}")
+    list(GET _spec 0 _url)
+    set(_ref "${ARG_REF}")
+    list(LENGTH _spec _len)
+    if(_len GREATER 1)
+        list(GET _spec 1 _ref)
+    endif()
+
+    _is_commit("${_url}" _url_is_commit)
+    if(_url STREQUAL "LATEST")
+        set(_url "${ARG_REPO_URL}")
+    elseif(_len EQUAL 1
+        AND (_url_is_commit OR _url MATCHES "^v?[0-9]+(\\.[0-9]+)*(-[0-9A-Za-z.]+)?$"))
+        # A bare version tag or commit pins the default repository.
+        set(_ref "${_url}")
+        set(_url "${ARG_REPO_URL}")
+    endif()
+
+    find_program(GIT_EXECUTABLE git REQUIRED)
+
+    set(_clone "${ARG_ARCHIVE}.clone")
+    set(_stamp "${ARG_ARCHIVE}.url")
+
+    # The stamp records '<url>@<ref>@<commit>'. Reuse the archive only when the
+    # reference still resolves to the recorded commit on the remote: a moving
+    # reference (HEAD, a branch, a reused tag) is refreshed when it advances,
+    # while a bare commit never needs the round-trip (ls-remote returns
+    # nothing for it).
+    set(_cached OFF)
+    if(EXISTS "${ARG_ARCHIVE}" AND EXISTS "${_clone}" AND EXISTS "${_stamp}")
+        file(READ "${_stamp}" _stamp_spec)
+        # The CMAKE_MATCH variables cannot be tested inside this if(): they
+        # would expand before the regex runs.
+        set(_stamp_source "")
+        if(_stamp_spec MATCHES "^(.+)@([0-9a-f]+)$")
+            set(_stamp_source "${CMAKE_MATCH_1}")
+            set(_stamp_commit "${CMAKE_MATCH_2}")
+        endif()
+        if(_stamp_source STREQUAL "${_url}@${_ref}")
+            find_program(GIT_EXECUTABLE git REQUIRED)
+            execute_process(
+                COMMAND "${GIT_EXECUTABLE}" ls-remote "${_url}" "${_ref}" "${_ref}^{}"
+                OUTPUT_VARIABLE _remote_refs
+                RESULT_VARIABLE _rc
+            )
+            if(NOT _rc EQUAL 0)
+                # Unreachable remote: keep the cached content.
+                message(STATUS "Cannot query ${_url}, keeping the cached archive")
+                set(_cached ON)
+            elseif(_remote_refs STREQUAL "" OR _remote_refs MATCHES "${_stamp_commit}")
+                set(_cached ON)
+            endif()
+        endif()
+    endif()
+
+    if(ARG_OUTPUT_CACHED)
+        set(${ARG_OUTPUT_CACHED} ${_cached} PARENT_SCOPE)
+    endif()
+
+    if(NOT _cached)
+        file(REMOVE "${_stamp}" "${ARG_ARCHIVE}")
+        file(REMOVE_RECURSE "${_clone}")
+        file(MAKE_DIRECTORY "${_clone}")
+
+        message(STATUS "Cloning ${_url} (${_ref})...")
+        _git_run(_rc "${_clone}" init -q)
+        if(_rc EQUAL 0)
+            _git_run(_rc "${_clone}" remote add origin "${_url}")
+        endif()
+        if(_rc EQUAL 0)
+            _git_run(_rc "${_clone}" fetch --depth 1 origin "${_ref}")
+        endif()
+        if(_rc EQUAL 0)
+            _git_run(_rc "${_clone}" checkout -q --detach FETCH_HEAD)
+        endif()
+        if(NOT _rc EQUAL 0)
+            message(FATAL_ERROR "clone_repo_archive: failed to clone ${_url} at '${_ref}'")
+        endif()
+
+        # A shallow submodule fetch can be refused when the pinned commit is
+        # not a branch tip on servers rejecting unadvertised objects.
+        _git_run(_rc "${_clone}" submodule update --init --recursive --depth 1)
+        if(NOT _rc EQUAL 0)
+            message(STATUS "Retrying the submodule update without --depth")
+            _git_run(_rc "${_clone}" submodule update --init --recursive)
+            if(NOT _rc EQUAL 0)
+                message(FATAL_ERROR "clone_repo_archive: failed to fetch the submodules of ${_url}")
+            endif()
+        endif()
+
+        # Archive the tracked files (of the repository and its submodules):
+        # this excludes the .git directories, and the file list goes through a
+        # file to stay clear of command line length limits.
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" -C "${_clone}" -c core.quotepath=off
+                ls-files --recurse-submodules
+            OUTPUT_VARIABLE _files
+            RESULT_VARIABLE _rc
+        )
+        if(NOT _rc EQUAL 0)
+            message(FATAL_ERROR "clone_repo_archive: failed to list the files of ${_url}")
+        endif()
+        string(REPLACE "\r" "" _files "${_files}")
+        string(REPLACE "\n" ";" _files "${_files}")
+        list(FILTER _files EXCLUDE REGEX "^\\.git")
+        list(FILTER _files EXCLUDE REGEX "^$")
+        if(ARG_DIRECTORY)
+            list(FILTER _files INCLUDE REGEX "^${ARG_DIRECTORY}/")
+        endif()
+        list(LENGTH _files _count)
+        if(_count EQUAL 0)
+            message(FATAL_ERROR "clone_repo_archive: nothing to archive from ${_url} (${_ref})")
+        endif()
+
+        _zip_files("${ARG_ARCHIVE}" "${_clone}" _files)
+        message(STATUS "${_url} (${_ref}) archived: ${ARG_ARCHIVE}")
+    endif()
+
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" -C "${_clone}" rev-parse HEAD
+        OUTPUT_VARIABLE _commit
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE _rc
+    )
+    if(NOT _rc EQUAL 0)
+        message(FATAL_ERROR "clone_repo_archive: failed to resolve the cloned commit")
+    endif()
+    if(NOT _cached)
+        file(WRITE "${_stamp}" "${_url}@${_ref}@${_commit}")
+    endif()
+    if(ARG_OUTPUT_COMMIT)
+        set(${ARG_OUTPUT_COMMIT} "${_commit}" PARENT_SCOPE)
+    endif()
+endfunction()
+
+# Resolve a sources specification to an archive laid out like the embedded
+# resources (entry names relative to the source root) and to its commit when
+# one is known:
+#   LATEST | <version> | <commit> | <repo-url>[,<ref>] | <directory> | <archive>
+# A repository specification is cloned and archived by clone_repo_archive(). A
+# local directory is archived at configure time (root '.git*' entries
+# excluded), with its commit when it is a git checkout. A local archive is
+# used as is (OUTPUT_ARCHIVE is then the specification itself). DIRECTORY
+# limits the archive to one subdirectory, whose prefix is kept in the entry
+# names.
+#
+#   fetch_repo_archive(
+#       SPEC           "${DFIRORC_DOC}"
+#       REPO_URL       https://github.com/DFIR-ORC/dfir-orc.github.io
+#       ARCHIVE        "${CMAKE_BINARY_DIR}/dfir-orc.github.io.zip"
+#       REF            gh-pages       # optional, see clone_repo_archive()
+#       DIRECTORY      docs           # optional
+#       OUTPUT_ARCHIVE DFIRORC_DOC_ARCHIVE   # the archive to embed
+#       OUTPUT_COMMIT  DFIRORC_DOC_COMMIT    # optional, empty when unknown
+#       OUTPUT_CACHED  _cached)              # optional: TRUE when a previous
+#                                            # clone and archive were reused
+#
+function(fetch_repo_archive)
+    set(oneValueArgs SPEC REPO_URL ARCHIVE REF DIRECTORY OUTPUT_ARCHIVE OUTPUT_COMMIT OUTPUT_CACHED)
+    # PARSE_ARGV keeps ';' inside argument values, which a SPEC using ';' as
+    # the reference separator relies on.
+    cmake_parse_arguments(PARSE_ARGV 0 ARG "" "${oneValueArgs}" "")
+
+    foreach(required SPEC REPO_URL ARCHIVE OUTPUT_ARCHIVE)
+        if(NOT ARG_${required})
+            message(FATAL_ERROR "fetch_repo_archive: ${required} is required")
+        endif()
+    endforeach()
+
+    set(_archive "${ARG_ARCHIVE}")
+    set(_commit "")
+    set(_cached OFF)
+
+    is_repo_spec("${ARG_SPEC}" _is_repo)
+    if(_is_repo)
+        set(_optional_args "")
+        if(ARG_REF)
+            list(APPEND _optional_args REF "${ARG_REF}")
+        endif()
+        if(ARG_DIRECTORY)
+            list(APPEND _optional_args DIRECTORY "${ARG_DIRECTORY}")
+        endif()
+        clone_repo_archive(
+            SPEC "${ARG_SPEC}"
+            REPO_URL "${ARG_REPO_URL}"
+            ARCHIVE "${ARG_ARCHIVE}"
+            ${_optional_args}
+            OUTPUT_COMMIT _commit
+            OUTPUT_CACHED _cached)
+    elseif(NOT EXISTS "${ARG_SPEC}")
+        message(FATAL_ERROR "fetch_repo_archive: SPEC does not exist: ${ARG_SPEC}")
+    elseif(IS_DIRECTORY "${ARG_SPEC}")
+        find_program(GIT_EXECUTABLE git)
+        if(GIT_EXECUTABLE)
+            execute_process(
+                COMMAND "${GIT_EXECUTABLE}" -C "${ARG_SPEC}" rev-parse HEAD
+                OUTPUT_VARIABLE _commit
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
+                RESULT_VARIABLE _rc
+            )
+            if(NOT _rc EQUAL 0)
+                set(_commit "")
+            endif()
+        endif()
+
+        file(GLOB_RECURSE _files RELATIVE "${ARG_SPEC}" "${ARG_SPEC}/*")
+        list(FILTER _files EXCLUDE REGEX "^\\.git")
+        if(ARG_DIRECTORY)
+            list(FILTER _files INCLUDE REGEX "^${ARG_DIRECTORY}/")
+        endif()
+        list(LENGTH _files _count)
+        if(_count EQUAL 0)
+            message(FATAL_ERROR "fetch_repo_archive: nothing to archive from ${ARG_SPEC}")
+        endif()
+
+        _zip_files("${ARG_ARCHIVE}" "${ARG_SPEC}" _files)
+        message(STATUS "${ARG_SPEC} archived: ${ARG_ARCHIVE}")
+    else()
+        # Local archive: used as is.
+        set(_archive "${ARG_SPEC}")
+    endif()
+
+    set(${ARG_OUTPUT_ARCHIVE} "${_archive}" PARENT_SCOPE)
+    if(ARG_OUTPUT_COMMIT)
+        set(${ARG_OUTPUT_COMMIT} "${_commit}" PARENT_SCOPE)
+    endif()
+    if(ARG_OUTPUT_CACHED)
+        set(${ARG_OUTPUT_CACHED} ${_cached} PARENT_SCOPE)
+    endif()
+endfunction()
+
 # Script mode: cmake -DURL=<url> -DDEST=<path> -P DownloadFile.cmake
 if(CMAKE_SCRIPT_MODE_FILE STREQUAL CMAKE_CURRENT_LIST_FILE)
     if(NOT URL)
