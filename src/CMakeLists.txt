@@ -228,6 +228,10 @@ if (DFIRORC_CONFIGURATION)
     endif()
 endif()
 
+# download_asset() replaces the spec with a local path: keep the spec to tell
+# later whether both assets were seeded from the same DFIRORC_REPO.
+set(_dfirorc_exe_spec "${DFIRORC_EXECUTABLE}")
+
 if (DFIRORC_EXECUTABLE)
     download_asset(
         SPEC "${DFIRORC_EXECUTABLE}"
@@ -259,6 +263,56 @@ else()
         "DFIRORC_EXECUTABLE is not set. "
         "A DFIR-ORC executable can be embedded into dfir-orc-forge so that "
         "\"File > New DFIR-ORC\" automatically uses it as the pre-loaded resource. "
-        "Set -DDFIRORC_EXECUTABLE=<path|url> to enable this feature."
+        "Set -DDFIRORC_EXECUTABLE=<path|url>, or -DDFIRORC_REPO=<version> to take "
+        "it from the same release as the capsule, to enable this feature."
+    )
+endif()
+
+if (DFIRORC_CAPSULE)
+    # Identical specs mean DFIRORC_REPO seeded both: reuse the tag the executable
+    # resolved to instead of asking for the latest release a second time, which a
+    # release published in between would answer differently -- pairing forge.exe
+    # with a capsule from another release.
+    set(_dfirorc_pin "")
+    if (DFIRORC_RELEASE_VERSION AND "${DFIRORC_CAPSULE}" STREQUAL "${_dfirorc_exe_spec}")
+        set(_dfirorc_pin "${DFIRORC_RELEASE_VERSION}")
+        message(STATUS
+            "Pinning the DFIR-ORC capsule to ${DFIRORC_RELEASE_VERSION}, "
+            "the release the executable resolved to")
+    endif()
+
+    download_asset(
+        SPEC "${DFIRORC_CAPSULE}"
+        REPO_URL "${DFIRORC_REPO_URL}"
+        ASSET_REGEX "DFIR-ORC-binaries\\.zip/OrcCapsule.exe"
+        VERSION "${_dfirorc_pin}"
+        OUTPUT DFIRORC_CAPSULE
+        OUTPUT_CACHED DFIRORC_CAPSULE_CACHED)
+
+    if (NOT EXISTS "${DFIRORC_CAPSULE}")
+        message(FATAL_ERROR "DFIRORC_CAPSULE does not exist: ${DFIRORC_CAPSULE}")
+    endif()
+
+    message_asset("DFIR-ORC capsule" "${DFIRORC_CAPSULE_CACHED}" "${DFIRORC_CAPSULE}")
+    message(STATUS "${PROJECT_NAME} will be wrapped into OrcCapsule as DFIR-ORC-Forge.exe")
+
+    set(DFIRORC_CAPSULE_OUTPUT "$<TARGET_FILE_DIR:${PROJECT_NAME}>/DFIR-ORC-Forge.exe")
+    add_custom_command(
+        TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo
+            "Wrapping $<TARGET_FILE_NAME:${PROJECT_NAME}> into OrcCapsule -> ${DFIRORC_CAPSULE_OUTPUT}"
+        COMMAND "${DFIRORC_CAPSULE}" capsule add "$<TARGET_FILE:${PROJECT_NAME}>" --output "${DFIRORC_CAPSULE_OUTPUT}" --force
+        VERBATIM
+    )
+else()
+    # The configure-time warning scrolls away and the cache makes the opt-out
+    # permanent: keep it in the build log of every unwrapped binary too.
+    add_custom_command(
+        TARGET ${PROJECT_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo
+            "warning: DFIRORC_CAPSULE=OFF: $<TARGET_FILE_NAME:${PROJECT_NAME}> is not wrapped into OrcCapsule and is exposed to DLL side-loading"
+        VERBATIM
     )
 endif()
