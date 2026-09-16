@@ -7,8 +7,8 @@ option(BUILD_QT_BASE "Build Qt from minimal sources" OFF)
 # rcedit embeds the resources below; none of those calls compresses, so its
 # codecs are off by default. They are built statically out of line when
 # enabled, see cmake/BuildRcedit.cmake.
-option(RCEDIT_ENABLE_7Z "Build rcedit with the 7z codec" OFF)
-option(RCEDIT_ENABLE_ZSTD "Build rcedit with the zstd codec" OFF)
+option(RCEDIT_ENABLE_7Z "Build rcedit with the 7z codec" ON)
+option(RCEDIT_ENABLE_ZSTD "Build rcedit with the zstd codec" ON)
 
 # DFIRORC_EXECUTABLE and DFIRORC_CAPSULE accept:
 #   OFF                          disable embedding
