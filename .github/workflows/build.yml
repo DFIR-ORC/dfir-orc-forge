@@ -46,7 +46,7 @@ jobs:
         echo "C:\Program Files\Ninja">>%GITHUB_PATH%
         set "PATH=%PATH%;C:\Program Files\Ninja"
         call "%GITHUB_WORKSPACE%\.github\vcvars64.cmd" || exit /b 1
-        cmake --preset forge-static -DBUILD_QT_BASE=ON -DDFIRORC_REPO="v10.3.4"
+        cmake --preset forge-static -DBUILD_QT_BASE=ON"
       shell: cmd
 
     - name: Build

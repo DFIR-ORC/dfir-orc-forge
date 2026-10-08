@@ -35,7 +35,7 @@ option(RCEDIT_ENABLE_ZSTD "Build rcedit with the zstd codec" ON)
 #   -DDFIRORC_REPO=LATEST
 #   -DDFIRORC_REPO=v10.3.4
 #   -DDFIRORC_REPO=https://github.com/fork/dfir-orc,v10.3.4
-set(DFIRORC_REPO "" CACHE STRING "DFIR-ORC release providing both the executable and the capsule: LATEST, <version> or <repo-url>[,<version>]")
+set(DFIRORC_REPO "https://github.com/DFIR-ORC/dfir-orc" CACHE STRING "DFIR-ORC release providing both the executable and the capsule: LATEST, <version> or <repo-url>[,<version>]")
 
 # Optional: DFIR-ORC executable to embed as RT_RCDATA/"DFIR-ORC"
 # Examples:
