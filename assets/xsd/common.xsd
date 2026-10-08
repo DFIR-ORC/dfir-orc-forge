@@ -508,12 +508,50 @@
             <xs:element name="Syslog" type="LogSyslogType" minOccurs="0" maxOccurs="1" />
         </xs:sequence>
         <xs:attributeGroup ref="LogLevelAttributeGroup" />
+        <xs:attributeGroup ref="EncryptUploadAttributeGroup" />
     </xs:complexType>
 
     <xs:complexType name="ConsoleType">
         <xs:sequence>
-            <xs:element name="Output" type="OutputType" minOccurs="1" maxOccurs="1" />
+            <xs:element name="Output" type="OutputType" minOccurs="0" maxOccurs="1" />
         </xs:sequence>
+        <xs:attributeGroup ref="EncryptUploadAttributeGroup" />
+    </xs:complexType>
+
+    <xs:simpleType name="YesNoTrueFalseType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="yes" />
+            <xs:enumeration value="no" />
+            <xs:enumeration value="true" />
+            <xs:enumeration value="false" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:attributeGroup name="EncryptUploadAttributeGroup">
+        <xs:attribute name="Encrypt" type="YesNoTrueFalseType" use="optional">
+            <xs:annotation><xs:documentation>Encrypt this file for the configured recipients, like a command archive (default: yes when a recipient is configured). Only an explicit no/false turns it off; a local configuration can turn it off, never on.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Upload" type="YesNoTrueFalseType" use="optional">
+            <xs:annotation><xs:documentation>Upload this file with the collected archives (default: yes). Set to no to keep it on the host. A local configuration can turn it off, never on.</xs:documentation></xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+
+    <xs:complexType name="WolfOutputType">
+        <xs:annotation><xs:documentation>Output file describing the collection itself (outline or outcome): an output with the encrypt/upload switches. May be left empty in a local configuration to only set the switches.</xs:documentation></xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="OutputType">
+                <xs:attributeGroup ref="EncryptUploadAttributeGroup" />
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="LocalLogType">
+        <xs:annotation><xs:documentation>Log configuration of a local configuration: a log with the encrypt/upload switches.</xs:documentation></xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="LogType">
+                <xs:attributeGroup ref="EncryptUploadAttributeGroup" />
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
 
     <xs:simpleType name="PriorityClassType">
@@ -536,6 +574,7 @@
         <xs:restriction base="xs:string">
             <xs:enumeration value="bits" />
             <xs:enumeration value="filecopy" />
+            <xs:enumeration value="rest" />
         </xs:restriction>
     </xs:simpleType>
 
@@ -546,6 +585,41 @@
             <xs:enumeration value="ntlm" />
             <xs:enumeration value="kerberos" />
             <xs:enumeration value="negotiate" />
+            <xs:enumeration value="awsv4" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="ProxyAuthSchemeType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="basic" />
+            <xs:enumeration value="ntlm" />
+            <xs:enumeration value="kerberos" />
+            <xs:enumeration value="negotiate" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="AwsClockType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="local" />
+            <xs:enumeration value="server" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="UploadRetryType">
+        <xs:restriction base="xs:nonNegativeInteger">
+            <xs:maxInclusive value="10" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="UploadRetryDelayType">
+        <xs:restriction base="xs:nonNegativeInteger">
+            <xs:maxInclusive value="1800" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="RestSessionType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="once" />
         </xs:restriction>
     </xs:simpleType>
 
@@ -567,6 +641,16 @@
         <xs:restriction base="xs:anyURI">
             <xs:pattern value="(https?|file)://[^/]+" />
         </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="EnvironmentVariableType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="%[^%]+%" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="UploadServerType">
+        <xs:union memberTypes="UrlHostType EnvironmentVariableType" />
     </xs:simpleType>
 
     <xs:complexType name="RecipientType">
@@ -595,19 +679,101 @@
         <xs:restriction base="xs:string" />
     </xs:simpleType>
 
+    <xs:complexType name="RestResponseType">
+        <xs:annotation><xs:documentation>Capture one value from the step's response into a {name} placeholder reusable by later steps. Give exactly one source: header, dav_property, attribute or form_input.</xs:documentation></xs:annotation>
+        <xs:attribute name="Header" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Name of the response header to capture.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="dav_property" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>WebDAV property to capture from a PROPFIND 207 body. Compiled out by default (ORC_REST_ENABLE_DAV_PROPERTY=0): a configuration using it is refused at embed time.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Name" type="xs:string" use="required">
+            <xs:annotation><xs:documentation>Name of the capture, referenced as {name} in later steps.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Default" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Value used when the response does not carry the captured item.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="form_input" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Name of an HTML hidden input whose value is captured (form login).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Attribute" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>HTML attribute whose value is captured from whichever tag carries it (e.g. data-requesttoken).</xs:documentation></xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="RestFormType">
+        <xs:annotation><xs:documentation>One field of an urlencoded form body sent by this step.</xs:documentation></xs:annotation>
+        <xs:attribute name="Field" type="xs:string" use="required">
+            <xs:annotation><xs:documentation>Form field name.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Value" type="xs:string" use="required">
+            <xs:annotation><xs:documentation>Form field value; may reference captures with {name}.</xs:documentation></xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="RestStepType">
+        <xs:annotation><xs:documentation>One HTTP request of a method="rest" upload dialog. Exactly one step, the body step, has body="{upload.local_path}" and streams the file; the others are control requests (MKCOL, HEAD, PROPFIND, MOVE...). Placeholders such as {upload.filename}, {upload.local_path}, {upload.total_size}, {upload.range_start}, {upload.random:hex:8} and captured {name} are substituted in path, http_query, body, offset and each header. Not environment-expanded.</xs:documentation></xs:annotation>
+        <xs:sequence>
+            <xs:element name="Header" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation><xs:documentation>One complete HTTP header line sent with this step (e.g. "Content-Type: application/octet-stream").</xs:documentation></xs:annotation>
+            </xs:element>
+            <xs:element name="Response" type="RestResponseType" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation><xs:documentation>Capture a value from this step's response into a {name} placeholder.</xs:documentation></xs:annotation>
+            </xs:element>
+            <xs:element name="Form" type="RestFormType" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation><xs:documentation>Field of an urlencoded form body sent by this step (form login).</xs:documentation></xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="http_method" type="xs:string" use="required">
+            <xs:annotation><xs:documentation>HTTP verb of the request (GET, PUT, POST, MKCOL, MOVE, PROPFIND...).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Path" type="xs:string" use="required">
+            <xs:annotation><xs:documentation>Request path on the server, with placeholders (e.g. /up/{upload.filename}).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="http_query" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Query string appended to the request path, with placeholders.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accept_status" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Comma-separated non-2xx HTTP status codes accepted as success (e.g. "405" for a MKCOL on an existing collection, "302,303" for a login POST).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Body" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Request body source; "{upload.local_path}" makes this the body step that streams the file.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Offset" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Body step only: offset to resume from, usually a capture (e.g. {remote_size}); clamped to the file size.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="chunk_size" type="xs:nonNegativeInteger" use="optional">
+            <xs:annotation><xs:documentation>Body step only: send the file in chunks of this many bytes (one request per chunk).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Session" type="RestSessionType" use="optional">
+            <xs:annotation><xs:documentation>"once" runs this step once for the whole run (session establishment, e.g. login) instead of once per uploaded file.</xs:documentation></xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="UploadType">
-        <xs:annotation><xs:documentation>Configure automatic upload of collected archives to a remote server after execution completes.</xs:documentation></xs:annotation>
+        <xs:annotation><xs:documentation>Configure automatic upload of collected archives to a remote server after execution completes. Can be repeated: the first entry is the primary destination, each later one a fallback tried only when the ones before it failed.</xs:documentation></xs:annotation>
+        <xs:sequence>
+            <xs:element name="Header" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation><xs:documentation>One complete HTTP header line sent with every request (e.g. "Authorization: Bearer ..."). Repeat for several headers.</xs:documentation></xs:annotation>
+            </xs:element>
+            <xs:element name="Rest" type="RestStepType" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation><xs:documentation>Ordered HTTP request of a method="rest" upload dialog.</xs:documentation></xs:annotation>
+            </xs:element>
+        </xs:sequence>
         <xs:attribute name="Job" type="YesNoType" use="optional">
             <xs:annotation><xs:documentation>If yes, use Background Intelligent Transfer Service (BITS) job management for upload.</xs:documentation></xs:annotation>
         </xs:attribute>
         <xs:attribute name="Method" type="UploadMethodType" use="required">
-            <xs:annotation><xs:documentation>Upload protocol: bits (BITS/HTTP) or filecopy (SMB file copy).</xs:documentation></xs:annotation>
+            <xs:annotation><xs:documentation>Upload protocol: bits (BITS/HTTP), filecopy (SMB file copy) or rest (HTTP(S) dialog of rest steps).</xs:documentation></xs:annotation>
         </xs:attribute>
-        <xs:attribute name="Server" type="UrlHostType" use="required">
-            <xs:annotation><xs:documentation>Target server URL including scheme and host (e.g. https://server.example.com or file://\\server\share).</xs:documentation></xs:annotation>
+        <xs:attribute name="Server" type="UploadServerType" use="optional">
+            <xs:annotation><xs:documentation>Target server URL including scheme and host (e.g. https://server.example.com or file://\\server\share). Environment variables are expanded (e.g. %ORC_UPLOAD_SERVER%). For method="rest" it must be a bare host[:port], and http:// requires insecure="true".</xs:documentation></xs:annotation>
         </xs:attribute>
-        <xs:attribute name="Path" use="required">
-            <xs:annotation><xs:documentation>Server-side path where files will be uploaded. Must start with '/'.</xs:documentation></xs:annotation>
+        <xs:attribute name="Uri" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Full destination URI (scheme, user, password, host, port and path). Environment variables are expanded. Cannot be combined with server, path, user or password.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Path" use="optional">
+            <xs:annotation><xs:documentation>Server-side path where files will be uploaded. Must start with '/'. Refused with method="rest": paths come from the rest steps.</xs:documentation></xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="xs:string">
                     <xs:pattern value="/.*" />
@@ -621,7 +787,7 @@
             <xs:annotation><xs:documentation>Password for authenticated upload.</xs:documentation></xs:annotation>
         </xs:attribute>
         <xs:attribute name="Authscheme" type="AuthSchemeType" use="optional">
-            <xs:annotation><xs:documentation>HTTP authentication scheme: anonymous, basic, ntlm, kerberos, or negotiate.</xs:documentation></xs:annotation>
+            <xs:annotation><xs:documentation>HTTP authentication scheme: anonymous, basic, ntlm, kerberos, negotiate, or awsv4 (AWS SigV4 for S3 compatible servers, method="rest" only, not available on XP).</xs:documentation></xs:annotation>
         </xs:attribute>
         <xs:attribute name="Operation" type="OperationType" use="optional">
             <xs:annotation><xs:documentation>File operation after successful upload: copy (leave source intact) or move (delete source after upload).</xs:documentation></xs:annotation>
@@ -637,6 +803,111 @@
         </xs:attribute>
         <xs:attribute name="delete_smb_share" type="TrueFalseType" use="optional">
             <xs:annotation><xs:documentation>If true, delete the SMB share after completing the filecopy upload.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="http_method" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Not honored at the upload level: refused with method="rest", where each rest step carries its own http_method.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="http_header" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>One complete HTTP header line sent with every request, used verbatim (never split). Use repeated header elements to send several headers.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="http_query" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Not honored at the upload level: refused with method="rest", where each rest step carries its own http_query.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="chunk_size" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Not honored at the upload level: refused with method="rest", where the body step carries its own chunk_size.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="https_security" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Minimum TLS version as a comma list of tlsX.Y tokens, each optionally tagged with an OS target [xp] or [seven] (default: "tls1.3, tls1.2[xp]"). "os-default" (or "none") leaves the system TLS policy in charge, "os-max" locks the highest version the host supports. Below TLS 1.2 requires insecure="true".</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Insecure" type="YesNoTrueFalseType" use="optional">
+            <xs:annotation><xs:documentation>Authorize inherently insecure transport: plain HTTP, TLS below 1.2, and no server certificate validation (default: false). Prefer server_cert_pin for a self-signed server.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="server_cert_pin" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Pinned server certificate(s), X.509 PEM or base64, comma or semicolon separated. The server is accepted only if its public key matches one; checked before any body is sent.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Proxy" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Proxy to use: host:port, "system" (machine-wide WinHTTP proxy), "wpad" or "auto" (auto-detect), "pac:&lt;url&gt;" or a *.pac URL, "direct", "none" or "" (no proxy). Absent: machine-wide WinHTTP proxy, direct when none is set. Environment variables are expanded.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="proxy_bypass" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>WinHTTP bypass list for a named proxy (e.g. "&lt;local&gt;;*.corp"). Environment variables are expanded.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="proxy_user" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Username for proxy authentication (explicit credentials only, the machine account is never relayed).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="proxy_password" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Password for proxy authentication.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="proxy_authscheme" type="ProxyAuthSchemeType" use="optional">
+            <xs:annotation><xs:documentation>Proxy authentication scheme: basic, ntlm, or negotiate (kerberos is a synonym). Required with proxy credentials: authentication is preemptive.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="follow_redirects" type="YesNoTrueFalseType" use="optional">
+            <xs:annotation><xs:documentation>Follow HTTP redirects (default: false).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="access_key" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>AWS SigV4 access key id (authscheme="awsv4").</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="secret_key" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>AWS SigV4 secret access key (authscheme="awsv4").</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="session_token" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>AWS SigV4 session token for temporary credentials (authscheme="awsv4").</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="aws_region" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>AWS SigV4 region, required with authscheme="awsv4" (no default). Environment variables are expanded.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="aws_service" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>AWS SigV4 service name (default: s3). Environment variables are expanded.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="aws_clock" type="AwsClockType" use="optional">
+            <xs:annotation><xs:documentation>Timestamp source for SigV4: local (default, log the clock skew and fail) or server (allow one re-signed retry using the server's Date header).</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Retry" type="UploadRetryType" use="optional">
+            <xs:annotation><xs:documentation>Extra attempts at this entry before the next upload entry is tried (0 to 10). retry x retry_delay is bounded to 30 minutes.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="retry_delay" type="UploadRetryDelayType" use="optional">
+            <xs:annotation><xs:documentation>Seconds to wait between retries of this entry (default: 30, at most 1800).</xs:documentation></xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="UploadDestinationType">
+        <xs:annotation><xs:documentation>One destination receiving its own copy of the collection: an upload fallback chain of its own. Destinations run one after another, never in parallel. operation="move" is refused when several destinations are configured; use delete_when_done on uploads instead.</xs:documentation></xs:annotation>
+        <xs:sequence>
+            <xs:element name="Upload" type="UploadType" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation><xs:documentation>Upload entry of this destination's fallback chain: the first is tried first, each later one only when the ones before it failed.</xs:documentation></xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="Name" type="xs:string" use="required">
+            <xs:annotation><xs:documentation>Unique, non-empty destination name (case-insensitive), used in every log line and refusal.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Required" type="YesNoTrueFalseType" use="optional">
+            <xs:annotation><xs:documentation>Whether this destination must receive the collection (default: yes). A required destination receiving nothing is critical, an optional one an error; neither stops the others.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Artifacts" type="YesNoTrueFalseType" use="optional">
+            <xs:annotation><xs:documentation>Whether this destination also receives the outline, outcome, log and console tee (default: yes). Set to no to send the archives alone.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Include" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Wildcard pattern for file names to send to this destination. Overrides the uploads value; an upload entry's own include overrides this one. include="" means deliberately empty, not inherited.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Exclude" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Wildcard pattern for file names to keep away from this destination. Overrides the uploads value; an upload entry's own exclude overrides this one. exclude="" means deliberately empty, not inherited.</xs:documentation></xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="UploadsType">
+        <xs:annotation><xs:documentation>Send one collection to several destinations. Cannot be combined with top-level upload elements, in the same file or across the embedded and local configurations.</xs:documentation></xs:annotation>
+        <xs:sequence>
+            <xs:element name="Destination" type="UploadDestinationType" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation><xs:documentation>A named destination, each an upload fallback chain of its own.</xs:documentation></xs:annotation>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="Include" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Wildcard pattern for file names to upload, inherited by every destination and upload entry that does not write its own.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Exclude" type="xs:string" use="optional">
+            <xs:annotation><xs:documentation>Wildcard pattern for file names not to upload, inherited by every destination and upload entry that does not write its own.</xs:documentation></xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="delete_when_done" type="YesNoTrueFalseType" use="optional">
+            <xs:annotation><xs:documentation>Delete a local file once every required destination has confirmed it (default: no; only an explicit yes enables it). Nothing is deleted when no required destination wanted the file, nor for a destination served by BITS.</xs:documentation></xs:annotation>
         </xs:attribute>
     </xs:complexType>
 

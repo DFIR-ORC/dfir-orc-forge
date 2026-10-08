@@ -6,8 +6,17 @@
         <xs:annotation><xs:documentation>DFIR-ORC local configuration file. Overrides settings from the embedded wolf configuration at runtime without recompiling the executable.</xs:documentation></xs:annotation>
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="Log" type="LogType" minOccurs="0">
+                <xs:element name="Log" type="LocalLogType" minOccurs="0">
                     <xs:annotation><xs:documentation>Override log output sinks and levels from the local machine.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Console" type="ConsoleType" minOccurs="0">
+                    <xs:annotation><xs:documentation>Override the console capture; may carry only the encrypt/upload switches.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Outline" type="WolfOutputType" minOccurs="0">
+                    <xs:annotation><xs:documentation>Override the execution outline file; may be empty to only set the encrypt/upload switches.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Outcome" type="WolfOutputType" minOccurs="0">
+                    <xs:annotation><xs:documentation>Override the execution outcome file; may be empty to only set the encrypt/upload switches.</xs:documentation></xs:annotation>
                 </xs:element>
                 <xs:element name="Output" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation><xs:documentation>Override the output directory or archive path for collected data.</xs:documentation></xs:annotation>
@@ -15,8 +24,11 @@
                 <xs:element name="Temporary" type="xs:string" minOccurs="0" maxOccurs="1">
                     <xs:annotation><xs:documentation>Override the temporary directory used during execution.</xs:documentation></xs:annotation>
                 </xs:element>
-                <xs:element name="Upload" type="UploadType" minOccurs="0" maxOccurs="1">
-                    <xs:annotation><xs:documentation>Override or add upload configuration for sending collected archives to a remote server.</xs:documentation></xs:annotation>
+                <xs:element name="Upload" type="UploadType" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation><xs:documentation>Add upload destinations for collected archives. Entries are appended after the embedded configuration's ones and tried in order, each as a fallback of the previous.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Uploads" type="UploadsType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Send the collection to several named destinations. Exclusive with upload, in this file and across the embedded and local configurations.</xs:documentation></xs:annotation>
                 </xs:element>
                 <xs:element name="Recipient" type="RecipientType" minOccurs="0">
                     <xs:annotation><xs:documentation>Add a local CMS/PKCS#7 certificate for archive encryption.</xs:documentation></xs:annotation>

@@ -12,14 +12,17 @@
                 <xs:element name="Console" type="ConsoleType" minOccurs="0">
                     <xs:annotation><xs:documentation>Capture human-readable console output to a file alongside normal log output.</xs:documentation></xs:annotation>
                 </xs:element>
-                <xs:element name="Outline" type="OutputType" minOccurs="0">
+                <xs:element name="Outline" type="WolfOutputType" minOccurs="0">
                     <xs:annotation><xs:documentation>Output file for the execution outline: a structured JSON summary of what ran and what was produced.</xs:documentation></xs:annotation>
                 </xs:element>
-                <xs:element name="Outcome" type="OutputType" minOccurs="0">
+                <xs:element name="Outcome" type="WolfOutputType" minOccurs="0">
                     <xs:annotation><xs:documentation>Output file for the execution outcome: a structured summary of results and any errors encountered.</xs:documentation></xs:annotation>
                 </xs:element>
-                <xs:element name="Upload" type="UploadType" minOccurs="0">
-                    <xs:annotation><xs:documentation>Configure automatic upload of collected archives to a remote server after execution.</xs:documentation></xs:annotation>
+                <xs:element name="Upload" type="UploadType" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation><xs:documentation>Configure automatic upload of collected archives to a remote server after execution. Repeat it to declare fallback destinations, tried in order.</xs:documentation></xs:annotation>
+                </xs:element>
+                <xs:element name="Uploads" type="UploadsType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation><xs:documentation>Send the collection to several named destinations. Exclusive with upload, in this file and across the embedded and local configurations.</xs:documentation></xs:annotation>
                 </xs:element>
                 <xs:element name="Recipient" type="RecipientType" minOccurs="0" maxOccurs="unbounded">
                     <xs:annotation><xs:documentation>CMS/PKCS#7 certificate for encrypting collected archives. Multiple recipients can be specified.</xs:documentation></xs:annotation>
